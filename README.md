@@ -61,7 +61,7 @@ Planned release builds will provide downloadable binaries for macOS and Linux:
 
 ```sh
 curl -L \
-  https://github.com/Nithish-Yenaganti/shine/releases/latest/download/shine_Darwin_arm64.tar.gz
+  https://github.com/Nithish-Yenaganti/shine/releases/latest/download/shine_0.1.0_darwin_arm64.tar.gz
 ```
 
 This command is a placeholder until release archives exist.
@@ -210,6 +210,12 @@ Build local snapshot artifacts in `dist/`:
 
 ```sh
 goreleaser release --snapshot --clean
+```
+
+Release archive names follow this format:
+
+```text
+shine_<version>_<os>_<arch>.tar.gz
 ```
 
 Publish a real release after tagging:
