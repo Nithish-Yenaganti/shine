@@ -13,8 +13,8 @@ import (
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/charmbracelet/lipgloss"
 
-	"shine/internal/config"
-	"shine/internal/model"
+	"github.com/Nithish-Yenaganti/shine/internal/config"
+	"github.com/Nithish-Yenaganti/shine/internal/model"
 )
 
 type Renderer struct {

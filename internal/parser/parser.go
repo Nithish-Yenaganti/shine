@@ -11,7 +11,7 @@ import (
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
 
-	"shine/internal/model"
+	"github.com/Nithish-Yenaganti/shine/internal/model"
 )
 
 var markdown = goldmark.New(

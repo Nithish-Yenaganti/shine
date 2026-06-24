@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"shine/internal/config"
+	"github.com/Nithish-Yenaganti/shine/internal/config"
 )
 
 func TestDaylightScreenFillsWindow(t *testing.T) {

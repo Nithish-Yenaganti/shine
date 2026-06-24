@@ -13,11 +13,11 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/fsnotify/fsnotify"
 
-	"shine/internal/config"
-	shinemodel "shine/internal/model"
-	"shine/internal/parser"
-	"shine/internal/render"
-	"shine/internal/source"
+	"github.com/Nithish-Yenaganti/shine/internal/config"
+	shinemodel "github.com/Nithish-Yenaganti/shine/internal/model"
+	"github.com/Nithish-Yenaganti/shine/internal/parser"
+	"github.com/Nithish-Yenaganti/shine/internal/render"
+	"github.com/Nithish-Yenaganti/shine/internal/source"
 )
 
 type Options struct {

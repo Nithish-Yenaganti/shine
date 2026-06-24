@@ -32,6 +32,61 @@
 
 `shine` is focused only on Markdown preview/rendering. It does not include AI transcript rendering, Codex/Claude integration, browser preview, Markdown editing, collaboration, or remote docs hosting.
 
+## Installation
+
+`shine` is not published yet. Until the first release is cut, install it from source.
+
+### From Source
+
+```sh
+git clone https://github.com/Nithish-Yenaganti/shine.git
+cd shine
+go build -o bin/shine ./cmd/shine
+bin/shine version
+```
+
+### Go Install
+
+After the first tagged release, Go users will be able to install the CLI with:
+
+```sh
+go install github.com/Nithish-Yenaganti/shine/cmd/shine@latest
+```
+
+During local development, prefer the source build command above so you know exactly which checkout you are testing.
+
+### GitHub Releases
+
+Planned release builds will provide downloadable binaries for macOS and Linux:
+
+```sh
+curl -L \
+  https://github.com/Nithish-Yenaganti/shine/releases/latest/download/shine_Darwin_arm64.tar.gz
+```
+
+This command is a placeholder until release archives exist.
+
+### npm
+
+Planned npm support will install a small wrapper package that downloads or runs the compiled `shine` binary:
+
+```sh
+npm install -g @nithish-yenaganti/shine
+```
+
+This package does not exist yet.
+
+### Homebrew
+
+Planned Homebrew support will install from a tap:
+
+```sh
+brew tap Nithish-Yenaganti/shine
+brew install shine
+```
+
+The tap and formula do not exist yet.
+
 ## Local Usage
 
 Build the local binary:

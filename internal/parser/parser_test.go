@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	"shine/internal/model"
+	"github.com/Nithish-Yenaganti/shine/internal/model"
 )
 
 func TestParseCoreBlocks(t *testing.T) {

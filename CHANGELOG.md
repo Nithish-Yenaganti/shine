@@ -14,3 +14,4 @@ All notable changes to `shine` will be documented in this file.
 - Agent-friendly modes: `--plain`, `--outline`, and `--check`.
 - Shell completions for bash, zsh, fish, and PowerShell.
 - `--version` output for release verification.
+- Installation documentation for source builds and planned Go, GitHub release, npm, and Homebrew channels.

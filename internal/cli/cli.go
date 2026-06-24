@@ -7,13 +7,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"shine/internal/config"
-	"shine/internal/inspect"
-	"shine/internal/parser"
-	"shine/internal/render"
-	"shine/internal/source"
-	shinetui "shine/internal/tui"
-	"shine/internal/version"
+	"github.com/Nithish-Yenaganti/shine/internal/config"
+	"github.com/Nithish-Yenaganti/shine/internal/inspect"
+	"github.com/Nithish-Yenaganti/shine/internal/parser"
+	"github.com/Nithish-Yenaganti/shine/internal/render"
+	"github.com/Nithish-Yenaganti/shine/internal/source"
+	shinetui "github.com/Nithish-Yenaganti/shine/internal/tui"
+	"github.com/Nithish-Yenaganti/shine/internal/version"
 )
 
 type options struct {

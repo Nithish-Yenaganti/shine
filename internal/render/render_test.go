@@ -6,8 +6,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"shine/internal/config"
-	"shine/internal/parser"
+	"github.com/Nithish-Yenaganti/shine/internal/config"
+	"github.com/Nithish-Yenaganti/shine/internal/parser"
 )
 
 func TestRenderCalloutTableAndCode(t *testing.T) {

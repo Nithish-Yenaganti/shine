@@ -1,6 +1,6 @@
 package main
 
-import "shine/internal/cli"
+import "github.com/Nithish-Yenaganti/shine/internal/cli"
 
 func main() {
 	cli.Execute()

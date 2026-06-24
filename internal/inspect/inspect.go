@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"shine/internal/model"
+	"github.com/Nithish-Yenaganti/shine/internal/model"
 )
 
 type Warning struct {

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"shine/internal/parser"
+	"github.com/Nithish-Yenaganti/shine/internal/parser"
 )
 
 func TestOutline(t *testing.T) {
