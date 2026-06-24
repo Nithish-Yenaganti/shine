@@ -16,3 +16,4 @@ All notable changes to `shine` will be documented in this file.
 - `--version` output for release verification.
 - Installation documentation for source builds and planned Go, GitHub release, npm, and Homebrew channels.
 - GoReleaser configuration for macOS and Linux release archives with checksums.
+- npm wrapper package that installs and runs the matching GitHub release binary.

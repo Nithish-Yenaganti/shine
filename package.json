@@ -1,0 +1,46 @@
+{
+  "name": "@nithish-yenaganti/shine",
+  "version": "0.1.0",
+  "description": "Terminal-native Markdown previewer built with Go and the Charm ecosystem.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nithish-Yenaganti/shine.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Nithish-Yenaganti/shine/issues"
+  },
+  "homepage": "https://github.com/Nithish-Yenaganti/shine#readme",
+  "bin": {
+    "shine": "npm/shine.js"
+  },
+  "files": [
+    "npm/install.js",
+    "npm/shine.js",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "postinstall": "node npm/install.js",
+    "test:npm": "SHINE_BINARY_PATH=bin/shine node npm/shine.js version"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "markdown",
+    "terminal",
+    "tui",
+    "preview",
+    "charm"
+  ]
+}

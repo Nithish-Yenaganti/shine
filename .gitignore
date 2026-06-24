@@ -2,6 +2,7 @@
 /bin/
 /dist/
 /target/
+/npm/bin/
 *.test
 *.prof
 *.out

@@ -68,13 +68,13 @@ This command is a placeholder until release archives exist.
 
 ### npm
 
-Planned npm support will install a small wrapper package that downloads or runs the compiled `shine` binary:
+The npm wrapper is included in this repo, but the package is not published yet. After the first GitHub release and npm publish, users will be able to install:
 
 ```sh
 npm install -g @nithish-yenaganti/shine
 ```
 
-This package does not exist yet.
+The npm package downloads the matching `shine` binary from GitHub Releases during install.
 
 ### Homebrew
 
@@ -218,6 +218,30 @@ Publish a real release after tagging:
 git tag v0.1.0
 git push origin v0.1.0
 goreleaser release --clean
+```
+
+## npm Package
+
+The npm package is a thin Node.js wrapper around the compiled Go binary. It downloads the matching release archive from GitHub during `postinstall`.
+
+Test the wrapper locally:
+
+```sh
+go build -o bin/shine ./cmd/shine
+npm run test:npm
+```
+
+Test the installer with a local binary instead of downloading from GitHub:
+
+```sh
+SHINE_BINARY_PATH=bin/shine node npm/install.js
+node npm/shine.js version
+```
+
+Publish after a matching GitHub release exists:
+
+```sh
+npm publish --access public
 ```
 
 ## Release Notes
