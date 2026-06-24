@@ -11,32 +11,22 @@
 
 # shine
 
-`shine` is a terminal-native Markdown previewer built with Go and the Charm ecosystem. It turns Markdown files into a readable TUI preview with themes, tables, callouts, code blocks, search, and agent-friendly output modes.
+`shine` is a terminal Markdown previewer. It renders Markdown in a TUI with themes, tables, callouts, code blocks, search, live reload, and script-friendly output modes.
 
-> Release status: `shine` is not published yet. Current local version is `0.1.0-dev`.
+Status: unreleased. Current local version: `0.1.0-dev`.
 
 ## Features
 
-- Markdown files and stdin input
-- Owned document/block render model
-- Terminal layout and rendering with Lip Gloss
-- Headings, paragraphs, block quotes, callouts, task lists, nested lists, tables, links, inline styles, code blocks, and image placeholders
-- Interactive scrolling, search, and heading outline
-- Live preview reload with `--watch`
-- In-app help panel and theme picker
-- Built-in themes: `midnight`, `daylight`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, `claude`, `everforest`, `jellybeans`, and `gotham`
-- Agent-friendly modes: `--plain`, `--outline`, and `--check`
+- Markdown files and stdin
+- TUI preview with scrolling, search, heading outline, help panel, and theme picker
+- Tables, callouts, task lists, nested lists, quotes, links, inline styles, code blocks, and image placeholders
+- Live reload with `--watch`
+- Agent/script modes: `--plain`, `--outline`, `--check`
 - Shell completions for bash, zsh, fish, and PowerShell
 
-## Non-Goals
+## Install
 
-`shine` is focused only on Markdown preview/rendering. It does not include AI transcript rendering, Codex/Claude integration, browser preview, Markdown editing, collaboration, or remote docs hosting.
-
-## Installation
-
-`shine` is not published yet. Until the first release is cut, install it from source.
-
-### From Source
+Until the first release is published, build from source:
 
 ```sh
 git clone https://github.com/Nithish-Yenaganti/shine.git
@@ -45,57 +35,16 @@ go build -o bin/shine ./cmd/shine
 bin/shine version
 ```
 
-### Go Install
-
-After the first tagged release, Go users will be able to install the CLI with:
+After the first tagged release:
 
 ```sh
 go install github.com/Nithish-Yenaganti/shine/cmd/shine@latest
-```
-
-During local development, prefer the source build command above so you know exactly which checkout you are testing.
-
-### GitHub Releases
-
-Planned release builds will provide downloadable binaries for macOS and Linux:
-
-```sh
-curl -L \
-  https://github.com/Nithish-Yenaganti/shine/releases/latest/download/shine_0.1.0_darwin_arm64.tar.gz
-```
-
-This command is a placeholder until release archives exist.
-
-### npm
-
-The npm wrapper is included in this repo, but the package is not published yet. After the first GitHub release and npm publish, users will be able to install:
-
-```sh
 npm install -g @nithish-yenaganti/shine
 ```
 
-The npm package downloads the matching `shine` binary from GitHub Releases during install.
+Homebrew support is planned but not configured yet.
 
-### Homebrew
-
-Planned Homebrew support will install from a tap:
-
-```sh
-brew tap Nithish-Yenaganti/shine
-brew install shine
-```
-
-The tap and formula do not exist yet.
-
-## Local Usage
-
-Build the local binary:
-
-```sh
-go build -o bin/shine ./cmd/shine
-```
-
-Run the TUI preview:
+## Usage
 
 ```sh
 bin/shine README.md
@@ -103,44 +52,24 @@ bin/shine --watch README.md
 cat README.md | bin/shine
 ```
 
-Print a rendered preview and exit:
+Non-interactive output:
 
 ```sh
 bin/shine --print README.md
 bin/shine --plain README.md
-```
-
-Inspect a Markdown file for agents or scripts:
-
-```sh
 bin/shine --outline README.md
 bin/shine --check README.md
 ```
 
-Check the version:
+Other commands:
 
 ```sh
 bin/shine version
 bin/shine --version
-```
-
-Generate shell completions:
-
-```sh
 bin/shine completions zsh > _shine
 ```
 
-## Agent-Friendly Modes
-
-Use `--print` or `--plain` when a coding agent should show a Markdown preview directly in chat output. Use the full TUI only when a human is running `shine` in their own terminal.
-
-```sh
-bin/shine --plain README.md      # rendered preview without ANSI styling
-bin/shine --outline README.md    # heading outline for quick navigation
-bin/shine --check README.md      # Markdown quality warnings; exits 2 when warnings exist
-```
-
-## Keyboard Controls
+## Keyboard
 
 ```text
 q          quit
@@ -162,27 +91,50 @@ h/H/F1     show help panel
 
 ## Themes
 
-`midnight` is the default theme. Inside the TUI, press `t` to open the theme picker, use up/down or `j/k`, then press Enter to apply.
+`midnight` is the default. Press `t` in the TUI to change themes.
 
-```sh
-bin/shine --theme midnight README.md
-bin/shine --theme daylight README.md
-bin/shine --theme mono README.md
-bin/shine --theme catppuccin-latte README.md
-bin/shine --theme catppuccin-mocha README.md
-bin/shine --theme claude README.md
-bin/shine --theme everforest README.md
-bin/shine --theme jellybeans README.md
-bin/shine --theme gotham README.md
-```
+Available themes:
+
+- `midnight`
+- `daylight`
+- `mono`
+- `catppuccin-latte`
+- `catppuccin-mocha`
+- `claude`
+- `everforest`
+- `jellybeans`
+- `gotham`
 
 Aliases:
 
-- `cappuccino` resolves to `catppuccin-latte`
-- `mocha` resolves to `catppuccin-mocha`
+- `cappuccino` -> `catppuccin-latte`
+- `mocha` -> `catppuccin-mocha`
 
-The `claude` theme uses an Anthropic-inspired warm ivory, ink, and clay palette.
-The `everforest`, `jellybeans`, and `gotham` themes are dark palettes based on their original editor themes.
+## Release
+
+GoReleaser builds macOS and Linux archives:
+
+```sh
+goreleaser check
+goreleaser release --snapshot --clean
+```
+
+Archive format:
+
+```text
+shine_<version>_<os>_<arch>.tar.gz
+```
+
+Publish after tagging:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+goreleaser release --clean
+npm publish --access public
+```
+
+The npm package is a thin wrapper that downloads the matching GitHub release binary during `postinstall`.
 
 ## Development
 
@@ -190,69 +142,8 @@ The `everforest`, `jellybeans`, and `gotham` themes are dark palettes based on t
 go test ./...
 go vet ./...
 go build -o bin/shine ./cmd/shine
-bin/shine fixtures/basic.md
-bin/shine --print fixtures/basic.md
-```
-
-## Release Builds
-
-Release archives are configured with GoReleaser.
-
-Install GoReleaser first, or replace `goreleaser` with `go run github.com/goreleaser/goreleaser/v2@latest` in the commands below.
-
-Check the config:
-
-```sh
-goreleaser check
-```
-
-Build local snapshot artifacts in `dist/`:
-
-```sh
-goreleaser release --snapshot --clean
-```
-
-Release archive names follow this format:
-
-```text
-shine_<version>_<os>_<arch>.tar.gz
-```
-
-Publish a real release after tagging:
-
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-goreleaser release --clean
-```
-
-## npm Package
-
-The npm package is a thin Node.js wrapper around the compiled Go binary. It downloads the matching release archive from GitHub during `postinstall`.
-
-Test the wrapper locally:
-
-```sh
-go build -o bin/shine ./cmd/shine
 npm run test:npm
 ```
-
-Test the installer with a local binary instead of downloading from GitHub:
-
-```sh
-SHINE_BINARY_PATH=bin/shine node npm/install.js
-node npm/shine.js version
-```
-
-Publish after a matching GitHub release exists:
-
-```sh
-npm publish --access public
-```
-
-## Release Notes
-
-See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
