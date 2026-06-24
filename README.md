@@ -194,6 +194,32 @@ bin/shine fixtures/basic.md
 bin/shine --print fixtures/basic.md
 ```
 
+## Release Builds
+
+Release archives are configured with GoReleaser.
+
+Install GoReleaser first, or replace `goreleaser` with `go run github.com/goreleaser/goreleaser/v2@latest` in the commands below.
+
+Check the config:
+
+```sh
+goreleaser check
+```
+
+Build local snapshot artifacts in `dist/`:
+
+```sh
+goreleaser release --snapshot --clean
+```
+
+Publish a real release after tagging:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+goreleaser release --clean
+```
+
 ## Release Notes
 
 See [CHANGELOG.md](CHANGELOG.md).

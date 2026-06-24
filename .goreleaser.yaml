@@ -1,0 +1,45 @@
+version: 2
+
+project_name: shine
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: shine
+    main: ./cmd/shine
+    binary: shine
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - >-
+        -s -w
+        -X github.com/Nithish-Yenaganti/shine/internal/version.Version={{ .Version }}
+        -X github.com/Nithish-Yenaganti/shine/internal/version.Commit={{ .Commit }}
+        -X github.com/Nithish-Yenaganti/shine/internal/version.Date={{ .CommitDate }}
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256
+
+changelog:
+  disable: true
