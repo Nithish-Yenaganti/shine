@@ -4,7 +4,7 @@ import "testing"
 
 func TestRootCommandExposesExpectedFlagsAndCompletions(t *testing.T) {
 	cmd := rootCommand()
-	for _, name := range []string{"print", "watch", "theme", "width", "no-alt-screen"} {
+	for _, name := range []string{"print", "plain", "outline", "check", "watch", "theme", "width", "no-alt-screen", "show-keys", "debug-keys"} {
 		if cmd.Flags().Lookup(name) == nil {
 			t.Fatalf("missing flag %s", name)
 		}

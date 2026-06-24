@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/fsnotify/fsnotify"
 
 	"shine/internal/config"
@@ -24,6 +25,8 @@ type Options struct {
 	Theme        config.Theme
 	Watch        bool
 	UseAltScreen bool
+	ShowKeys     bool
+	DebugKeys    bool
 }
 
 type model struct {
@@ -35,6 +38,8 @@ type model struct {
 	searching  bool
 	outline    bool
 	help       bool
+	themeMenu  bool
+	themeIndex int
 	width      int
 	height     int
 	content    string
@@ -43,9 +48,12 @@ type model struct {
 	matchIndex int
 	status     string
 	err        error
+	debugKeys  bool
+	lastKey    string
 }
 
 type fileChanged struct{}
+type terminalBackgroundMsg struct{}
 
 func Run(opts Options) error {
 	doc, err := parser.Parse([]byte(opts.Source.Content), opts.Source.Name)
@@ -57,16 +65,22 @@ func Run(opts Options) error {
 	input.CharLimit = 128
 
 	m := model{
-		source:   opts.Source,
-		theme:    opts.Theme,
-		watch:    opts.Watch,
-		viewport: viewport.New(88, 24),
-		search:   input,
-		content:  render.New(88, opts.Theme).Render(doc),
-		status:   "shine",
+		source:     opts.Source,
+		theme:      opts.Theme,
+		watch:      opts.Watch,
+		viewport:   viewport.New(88, 24),
+		search:     input,
+		help:       opts.ShowKeys,
+		themeIndex: themeIndex(opts.Theme.Name),
+		debugKeys:  opts.DebugKeys,
+		content:    render.New(88, opts.Theme).Render(doc),
+		status:     "shine",
 	}
 	m.headings = doc.Headings
-	programOptions := []tea.ProgramOption{}
+	programOptions := []tea.ProgramOption{
+		tea.WithInput(os.Stdin),
+		tea.WithOutput(os.Stdout),
+	}
 	if opts.UseAltScreen {
 		programOptions = append(programOptions, tea.WithAltScreen())
 	}
@@ -76,10 +90,14 @@ func Run(opts Options) error {
 
 func (m model) Init() tea.Cmd {
 	m.viewport.SetContent(m.content)
-	if m.watch && m.source.Path != "" {
-		return watchFile(m.source.Path)
+	var cmds []tea.Cmd
+	if m.theme.Background != "" {
+		cmds = append(cmds, tea.Sequence(terminalBackgroundCmd(m.theme.Background), tea.ClearScreen))
 	}
-	return nil
+	if m.watch && m.source.Path != "" {
+		cmds = append(cmds, watchFile(m.source.Path))
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -96,6 +114,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, watchFile(m.source.Path)
 		}
 	case tea.KeyMsg:
+		m.lastKey = keyLabel(msg)
+		if m.themeMenu {
+			return m.updateThemeMenu(msg)
+		}
 		if m.searching {
 			switch msg.String() {
 			case "enter":
@@ -111,15 +133,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.search, cmd = m.search.Update(msg)
 			return m, cmd
 		}
+		if opensHelp(msg) {
+			m.help = true
+			return m, nil
+		}
+		if togglesHelp(msg) {
+			m.help = !m.help
+			return m, nil
+		}
 		switch msg.String() {
 		case "q", "ctrl+c":
-			return m, tea.Quit
+			return m, tea.Sequence(terminalBackgroundCmd(""), tea.Quit)
 		case "/":
 			m.searching = true
 			m.search.Focus()
-			return m, nil
-		case "?":
-			m.help = !m.help
 			return m, nil
 		case "n":
 			m.nextMatch()
@@ -132,6 +159,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "r":
 			m.reloadFile()
+			return m, nil
+		case "t":
+			m.themeIndex = themeIndex(m.theme.Name)
+			m.themeMenu = true
+			return m, nil
+		case "j", "down":
+			m.viewport.LineDown(1)
+			return m, nil
+		case "k", "up":
+			m.viewport.LineUp(1)
+			return m, nil
+		case "d", "ctrl+d", "pgdown", "pagedown", " ":
+			m.viewport.HalfViewDown()
+			return m, nil
+		case "u", "ctrl+u", "pgup", "pageup":
+			m.viewport.HalfViewUp()
 			return m, nil
 		case "g":
 			m.viewport.GotoTop()
@@ -148,7 +191,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	body := m.viewport.View()
-	if m.outline {
+	if m.themeMenu {
+		body = m.centeredView(m.themeMenuView())
+	} else if m.outline {
 		body = m.outlineView() + "\n\n" + body
 	}
 	if m.help {
@@ -158,7 +203,30 @@ func (m model) View() string {
 	if m.searching {
 		status = m.search.View()
 	}
-	return body + "\n" + status
+	return m.screen(body, status)
+}
+
+func (m model) updateThemeMenu(msg tea.KeyMsg) (model, tea.Cmd) {
+	names := config.ThemeNames()
+	switch msg.String() {
+	case "esc", "q", "t":
+		m.themeMenu = false
+	case "up", "k":
+		m.themeIndex--
+		if m.themeIndex < 0 {
+			m.themeIndex = len(names) - 1
+		}
+	case "down", "j":
+		m.themeIndex = (m.themeIndex + 1) % len(names)
+	case "enter":
+		name := names[m.themeIndex]
+		m.theme = config.ThemeByName(name)
+		m.themeMenu = false
+		m.status = "theme: " + name
+		m.reloadRender()
+		return m, tea.Sequence(terminalBackgroundCmd(m.theme.Background), tea.ClearScreen)
+	}
+	return m, nil
 }
 
 func (m *model) reloadFile() {
@@ -236,7 +304,7 @@ func (m *model) previousMatch() {
 
 func (m model) outlineView() string {
 	var lines []string
-	title := lipgloss.NewStyle().Foreground(lipgloss.Color(m.theme.Heading)).Bold(true).Render("outline")
+	title := m.style().Foreground(lipgloss.Color(m.theme.Heading)).Bold(true).Render("outline")
 	lines = append(lines, title)
 	for _, h := range m.headings {
 		lines = append(lines, strings.Repeat("  ", max(0, h.Level-1))+h.Text)
@@ -246,17 +314,57 @@ func (m model) outlineView() string {
 
 func (m model) helpView() string {
 	help := strings.Join([]string{
-		lipgloss.NewStyle().Foreground(lipgloss.Color(m.theme.Heading)).Bold(true).Render("keys"),
+		m.style().Foreground(lipgloss.Color(m.theme.Heading)).Bold(true).Render("keys"),
 		"q quit    j/k scroll    g/G top/bottom",
+		"d/u half-page          arrows scroll",
 		"/ search  n/N matches   o outline",
-		"r reload  ? help",
+		"t themes  r reload      h help",
+		"? toggle help",
 	}, "\n")
 	return m.panelStyle().Render(help)
 }
 
+func (m model) themeMenuView() string {
+	names := config.ThemeNames()
+	var lines []string
+	lines = append(lines, m.style().Foreground(lipgloss.Color(m.theme.Heading)).Bold(true).Render("themes"))
+	lines = append(lines, "")
+	for i, name := range names {
+		marker := " "
+		rowStyle := m.style().Foreground(lipgloss.Color(m.theme.Body))
+		if i == m.themeIndex {
+			marker = "›"
+			rowStyle = rowStyle.
+				Foreground(lipgloss.Color("#1f2328")).
+				Background(lipgloss.Color(m.theme.MatchHighlight)).
+				Bold(true)
+		}
+		current := ""
+		if name == m.theme.Name {
+			current = " current"
+		}
+		lines = append(lines, rowStyle.Render(fmt.Sprintf("%s %s%s", marker, name, current)))
+	}
+	lines = append(lines, "")
+	lines = append(lines, m.style().Foreground(lipgloss.Color(m.theme.Muted)).Render("enter apply   esc close"))
+	return m.panelStyle().Width(38).Render(strings.Join(lines, "\n"))
+}
+
+func (m model) centeredView(content string) string {
+	width := m.width
+	if width == 0 {
+		width = 88
+	}
+	height := m.viewport.Height
+	if height == 0 {
+		height = 23
+	}
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, content)
+}
+
 func (m model) statusLine() string {
 	if m.err != nil {
-		return lipgloss.NewStyle().Foreground(lipgloss.Color(m.theme.CalloutWarning)).Render("error: " + m.err.Error())
+		return m.style().Foreground(lipgloss.Color(m.theme.CalloutWarning)).Render("error: " + m.err.Error())
 	}
 	watch := "watch:off"
 	if m.watch {
@@ -268,9 +376,59 @@ func (m model) statusLine() string {
 	if len(m.matches) > 0 {
 		search = fmt.Sprintf("match:%d/%d", m.matchIndex+1, len(m.matches))
 	}
-	return lipgloss.NewStyle().Foreground(lipgloss.Color(m.theme.Muted)).Render(
-		fmt.Sprintf("%s | %s | line:%d/%d | %s | ? keys", m.source.Name, watch, currentLine, totalLines, search),
+	keyDebug := ""
+	if m.debugKeys {
+		keyDebug = " | key:" + m.lastKey
+	}
+	return m.style().Foreground(lipgloss.Color(m.theme.Muted)).Render(
+		fmt.Sprintf("%s | theme:%s | %s | line:%d/%d | %s | t themes | h keys%s", m.source.Name, m.theme.Name, watch, currentLine, totalLines, search, keyDebug),
 	)
+}
+
+func keyLabel(msg tea.KeyMsg) string {
+	label := msg.String()
+	if label != "" {
+		return label
+	}
+	if len(msg.Runes) == 0 {
+		return fmt.Sprintf("%d", msg.Type)
+	}
+	return string(msg.Runes)
+}
+
+func terminalBackgroundCmd(background string) tea.Cmd {
+	return func() tea.Msg {
+		if background == "" {
+			fmt.Fprint(os.Stdout, ansi.ResetBackgroundColor)
+		} else {
+			fmt.Fprint(os.Stdout, ansi.SetBackgroundColor(background))
+		}
+		return terminalBackgroundMsg{}
+	}
+}
+
+func opensHelp(msg tea.KeyMsg) bool {
+	switch msg.String() {
+	case "h", "H", "f1":
+		return true
+	}
+	return false
+}
+
+func togglesHelp(msg tea.KeyMsg) bool {
+	if msg.String() == "?" || msg.String() == "shift+/" {
+		return true
+	}
+	return len(msg.Runes) == 1 && msg.Runes[0] == '?'
+}
+
+func themeIndex(name string) int {
+	for i, candidate := range config.ThemeNames() {
+		if candidate == name {
+			return i
+		}
+	}
+	return 0
 }
 
 func (m model) highlightedContent(query string) string {
@@ -291,11 +449,50 @@ func (m model) panelStyle() lipgloss.Style {
 	if width == 0 {
 		width = 88
 	}
-	return lipgloss.NewStyle().
+	return m.style().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color(m.theme.Border)).
 		Padding(0, 1).
 		Width(max(20, min(width-2, 42)))
+}
+
+func (m model) style() lipgloss.Style {
+	return lipgloss.NewStyle()
+}
+
+func (m model) screen(body string, status string) string {
+	if m.theme.Background == "" {
+		return body + "\n" + status
+	}
+	width := m.width
+	if width == 0 {
+		width = 88
+	}
+	height := m.height
+	if height == 0 {
+		height = len(strings.Split(body, "\n")) + 1
+	}
+	bodyHeight := max(0, height-1)
+	bodyLines := strings.Split(body, "\n")
+	if len(bodyLines) > bodyHeight {
+		bodyLines = bodyLines[:bodyHeight]
+	}
+	lines := append(bodyLines, status)
+	for len(lines) < height {
+		lines = append(lines, "")
+	}
+	for i, line := range lines {
+		lines[i] = m.paintLine(line, width)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (m model) paintLine(line string, width int) string {
+	lineWidth := lipgloss.Width(line)
+	if lineWidth >= width {
+		return line
+	}
+	return line + strings.Repeat(" ", width-lineWidth)
 }
 
 func watchFile(path string) tea.Cmd {

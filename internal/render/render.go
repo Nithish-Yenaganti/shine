@@ -276,7 +276,7 @@ func (r Renderer) code(block model.Block) string {
 
 func (r Renderer) codeLines(code string, language string) []string {
 	raw := splitCode(code)
-	if r.Theme.Name == "mono" {
+	if r.Theme.Name == "mono" || r.Theme.Name == "daylight" || r.Theme.Name == "claude" {
 		return raw
 	}
 	lexer := lexers.Get(language)
