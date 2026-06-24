@@ -70,6 +70,20 @@ func TestRenderNestedList(t *testing.T) {
 	}
 }
 
+func TestAsciiCodeBlockDoesNotShowLineNumbers(t *testing.T) {
+	doc, err := parser.Parse([]byte("```ascii\n █████\n░░███\n```\n"), "test.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := New(48, config.ThemeByName("mono")).Render(doc)
+	if strings.Contains(out, "│ 1 ") || strings.Contains(out, "│ 2 ") {
+		t.Fatalf("ascii block should not show line numbers:\n%s", out)
+	}
+	if !strings.Contains(out, "█████") || !strings.Contains(out, "░░███") {
+		t.Fatalf("missing ascii art:\n%s", out)
+	}
+}
+
 func TestDaylightCodeUsesReadableRawLines(t *testing.T) {
 	r := New(48, config.ThemeByName("daylight"))
 	lines := r.codeLines("fn main() {\n    fmt.Println(\"hi\")\n}", "go")

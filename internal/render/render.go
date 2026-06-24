@@ -256,7 +256,8 @@ func (r Renderer) code(block model.Block) string {
 	codeLines := r.codeLines(block.Code, label)
 	numberWidth := len(strconv.Itoa(len(codeLines)))
 	contentWidth := max(18, r.Width-2)
-	if r.Theme.CodeLineNumbers {
+	showLineNumbers := r.showCodeLineNumbers(label)
+	if showLineNumbers {
 		contentWidth -= numberWidth + 3
 	}
 	topLabel := " " + label + " "
@@ -265,13 +266,25 @@ func (r Renderer) code(block model.Block) string {
 	for i, line := range codeLines {
 		line = lipgloss.NewStyle().MaxWidth(contentWidth).Render(line)
 		prefix := r.mutedStyle().Render("│ ")
-		if r.Theme.CodeLineNumbers {
+		if showLineNumbers {
 			prefix = r.mutedStyle().Render(fmt.Sprintf("│ %*d ", numberWidth, i+1))
 		}
 		lines = append(lines, prefix+r.codeBackgroundStyle().Render(padRight(line, contentWidth)))
 	}
 	lines = append(lines, r.borderStyle().Render("└"+strings.Repeat("─", max(1, r.Width-1))))
 	return strings.Join(lines, "\n")
+}
+
+func (r Renderer) showCodeLineNumbers(language string) bool {
+	if !r.Theme.CodeLineNumbers {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(language)) {
+	case "ascii", "art", "banner":
+		return false
+	default:
+		return true
+	}
 }
 
 func (r Renderer) codeLines(code string, language string) []string {

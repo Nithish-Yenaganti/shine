@@ -22,7 +22,7 @@ type Theme struct {
 }
 
 func ThemeNames() []string {
-	return []string{"midnight", "daylight", "mono", "catppuccin-latte", "catppuccin-mocha", "claude"}
+	return []string{"midnight", "daylight", "mono", "catppuccin-latte", "catppuccin-mocha", "claude", "everforest", "jellybeans", "gotham"}
 }
 
 func ThemeByName(name string) Theme {
@@ -111,6 +111,69 @@ func ThemeByName(name string) Theme {
 			BlockGap:        1,
 			CodeLineNumbers: true,
 		}
+	case "everforest":
+		return Theme{
+			Name:            "everforest",
+			Background:      "#2d353b",
+			Heading:         "#7fbbb3",
+			Body:            "#d3c6aa",
+			Muted:           "#859289",
+			Border:          "#475258",
+			Code:            "#a7c080",
+			CodeBackground:  "#232a2e",
+			InlineCode:      "#e69875",
+			Link:            "#83c092",
+			TableHeader:     "#d3c6aa",
+			Quote:           "#d699b6",
+			CalloutNote:     "#7fbbb3",
+			CalloutTip:      "#a7c080",
+			CalloutWarning:  "#dbbc7f",
+			MatchHighlight:  "#dbbc7f",
+			BlockGap:        1,
+			CodeLineNumbers: true,
+		}
+	case "jellybeans":
+		return Theme{
+			Name:            "jellybeans",
+			Background:      "#151515",
+			Heading:         "#8197bf",
+			Body:            "#e8e8d3",
+			Muted:           "#888888",
+			Border:          "#404040",
+			Code:            "#99ad6a",
+			CodeBackground:  "#1c1c1c",
+			InlineCode:      "#ffb964",
+			Link:            "#8fbfdc",
+			TableHeader:     "#e8e8d3",
+			Quote:           "#c6b6ee",
+			CalloutNote:     "#8fbfdc",
+			CalloutTip:      "#99ad6a",
+			CalloutWarning:  "#fad07a",
+			MatchHighlight:  "#fad07a",
+			BlockGap:        1,
+			CodeLineNumbers: true,
+		}
+	case "gotham":
+		return Theme{
+			Name:            "gotham",
+			Background:      "#0c1014",
+			Heading:         "#599cab",
+			Body:            "#99d1ce",
+			Muted:           "#245361",
+			Border:          "#0a3749",
+			Code:            "#2aa889",
+			CodeBackground:  "#11151c",
+			InlineCode:      "#d26937",
+			Link:            "#33859e",
+			TableHeader:     "#d3ebe9",
+			Quote:           "#888ca6",
+			CalloutNote:     "#33859e",
+			CalloutTip:      "#2aa889",
+			CalloutWarning:  "#edb443",
+			MatchHighlight:  "#edb443",
+			BlockGap:        1,
+			CodeLineNumbers: true,
+		}
 	case "mono":
 		t := ThemeByName("midnight")
 		t.Name = "mono"
@@ -133,20 +196,21 @@ func ThemeByName(name string) Theme {
 	default:
 		return Theme{
 			Name:            "midnight",
-			Heading:         "#8bd5ff",
-			Body:            "#e7e7e7",
-			Muted:           "#8a8f98",
-			Border:          "#3a3f4b",
-			Code:            "#b7f7c8",
-			CodeBackground:  "#151922",
-			InlineCode:      "#ffb86c",
-			Link:            "#7dcfff",
-			TableHeader:     "#ffffff",
-			Quote:           "#c6a0ff",
-			CalloutNote:     "#8bd5ff",
-			CalloutTip:      "#7ee787",
-			CalloutWarning:  "#ffd166",
-			MatchHighlight:  "#ffd166",
+			Background:      "#1d1f21",
+			Heading:         "#81a2be",
+			Body:            "#c5c8c6",
+			Muted:           "#969896",
+			Border:          "#373b41",
+			Code:            "#b5bd68",
+			CodeBackground:  "#282a2e",
+			InlineCode:      "#de935f",
+			Link:            "#8abeb7",
+			TableHeader:     "#c5c8c6",
+			Quote:           "#b294bb",
+			CalloutNote:     "#81a2be",
+			CalloutTip:      "#b5bd68",
+			CalloutWarning:  "#f0c674",
+			MatchHighlight:  "#de935f",
 			BlockGap:        1,
 			CodeLineNumbers: true,
 		}

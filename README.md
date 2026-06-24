@@ -1,4 +1,13 @@
-![Shine terminal Markdown previewer](internal/tui/assets/shine_dos_rebel_banner.png)
+```ascii
+         █████       ███
+        ░░███       ░░░
+  █████  ░███████   ████  ████████    ██████
+ ███░░   ░███░░███ ░░███ ░░███░░███  ███░░███
+░░█████  ░███ ░███  ░███  ░███ ░███ ░███████
+ ░░░░███ ░███ ░███  ░███  ░███ ░███ ░███░░░
+ ██████  ████ █████ █████ ████ █████░░██████
+░░░░░░  ░░░░ ░░░░░ ░░░░░ ░░░░ ░░░░░  ░░░░░░
+```
 
 # shine
 
@@ -15,7 +24,7 @@
 - Interactive scrolling, search, and heading outline
 - Live preview reload with `--watch`
 - In-app help panel and theme picker
-- Built-in themes: `midnight`, `daylight`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, and `claude`
+- Built-in themes: `midnight`, `daylight`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, `claude`, `everforest`, `jellybeans`, and `gotham`
 - Agent-friendly modes: `--plain`, `--outline`, and `--check`
 - Shell completions for bash, zsh, fish, and PowerShell
 
@@ -107,6 +116,9 @@ bin/shine --theme mono README.md
 bin/shine --theme catppuccin-latte README.md
 bin/shine --theme catppuccin-mocha README.md
 bin/shine --theme claude README.md
+bin/shine --theme everforest README.md
+bin/shine --theme jellybeans README.md
+bin/shine --theme gotham README.md
 ```
 
 Aliases:
@@ -115,6 +127,7 @@ Aliases:
 - `mocha` resolves to `catppuccin-mocha`
 
 The `claude` theme uses an Anthropic-inspired warm ivory, ink, and clay palette.
+The `everforest`, `jellybeans`, and `gotham` themes are dark palettes based on their original editor themes.
 
 ## Development
 
