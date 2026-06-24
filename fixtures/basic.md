@@ -1,6 +1,6 @@
-# mdview
+# shine
 
-Terminal-native Markdown preview with **bold text**, *italic text*, `inline code`, and [links](https://example.com).
+Terminal-native Markdown preview with **bold text**, *italic text*, `inline code`, ~~old text~~, and [links](https://example.com).
 
 > [!NOTE]
 > This is a callout rendered from a block quote.
@@ -10,6 +10,8 @@ Terminal-native Markdown preview with **bold text**, *italic text*, `inline code
 - [x] Headings
 - [x] Paragraphs
 - [ ] Images
+  - Nested list items keep their own indentation
+  - Wrapped nested items should align cleanly
 
 | Feature | Status |
 | --- | --- |
@@ -17,9 +19,9 @@ Terminal-native Markdown preview with **bold text**, *italic text*, `inline code
 | Search | Working |
 | Wrapped cells | This longer value should wrap cleanly instead of being unreadable on narrow terminals |
 
-```rust
+```go
 fn main() {
-    println!("hello mdview");
+    fmt.Println("hello shine")
 }
 ```
 

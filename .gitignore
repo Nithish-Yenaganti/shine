@@ -1,4 +1,33 @@
-/target
-/.DS_Store
+# Build outputs
+/bin/
+/dist/
+/target/
+*.test
+*.prof
+*.out
+coverage.*
+
+# Local caches
+/.cache/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Generated shell completions
+/_shine
+/shine-completions.*
+
+# Local agent/editor metadata
+/.agents/
+/.codex/
+.vscode/
+.idea/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
 *.swp
 *.swo
+*~

@@ -17,37 +17,53 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
+            target: linux-amd64
+            goos: linux
+            goarch: amd64
             archive: tar.gz
           - os: macos-latest
-            target: x86_64-apple-darwin
+            target: darwin-amd64
+            goos: darwin
+            goarch: amd64
             archive: tar.gz
           - os: macos-latest
-            target: aarch64-apple-darwin
+            target: darwin-arm64
+            goos: darwin
+            goarch: arm64
             archive: tar.gz
           - os: windows-latest
-            target: x86_64-pc-windows-msvc
+            target: windows-amd64
+            goos: windows
+            goarch: amd64
             archive: zip
 
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-go@v5
         with:
-          targets: ${{ matrix.target }}
-      - run: cargo build --release --target ${{ matrix.target }}
-      - name: Package Unix
+          go-version-file: go.mod
+      - name: Build Unix
         if: matrix.archive == 'tar.gz'
         run: |
           mkdir -p dist
-          cp target/${{ matrix.target }}/release/mdview dist/mdview
-          tar -C dist -czf mdview-${{ matrix.target }}.tar.gz mdview
-      - name: Package Windows
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/shine ./cmd/shine
+      - name: Build Windows
         if: matrix.archive == 'zip'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist
-          Copy-Item target/${{ matrix.target }}/release/mdview.exe dist/mdview.exe
-          Compress-Archive -Path dist/mdview.exe -DestinationPath mdview-${{ matrix.target }}.zip
+          $env:GOOS="${{ matrix.goos }}"
+          $env:GOARCH="${{ matrix.goarch }}"
+          go build -o dist/shine.exe ./cmd/shine
+      - name: Package Unix
+        if: matrix.archive == 'tar.gz'
+        run: |
+          tar -C dist -czf shine-${{ matrix.target }}.tar.gz shine
+      - name: Package Windows
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/shine.exe -DestinationPath shine-${{ matrix.target }}.zip
       - uses: softprops/action-gh-release@v2
         with:
-          files: mdview-${{ matrix.target }}.*
+          files: shine-${{ matrix.target }}.*
