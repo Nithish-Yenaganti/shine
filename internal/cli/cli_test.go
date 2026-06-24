@@ -1,6 +1,10 @@
 package cli
 
-import "testing"
+import (
+	"bytes"
+	"strings"
+	"testing"
+)
 
 func TestRootCommandExposesExpectedFlagsAndCompletions(t *testing.T) {
 	cmd := rootCommand()
@@ -11,5 +15,21 @@ func TestRootCommandExposesExpectedFlagsAndCompletions(t *testing.T) {
 	}
 	if _, _, err := cmd.Find([]string{"completions", "zsh"}); err != nil {
 		t.Fatal(err)
+	}
+	if _, _, err := cmd.Find([]string{"version"}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestVersionCommand(t *testing.T) {
+	cmd := rootCommand()
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetArgs([]string{"version"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimSpace(out.String()); got != "0.1.0-dev" {
+		t.Fatalf("version output = %q", got)
 	}
 }

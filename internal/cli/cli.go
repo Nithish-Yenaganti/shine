@@ -13,6 +13,7 @@ import (
 	"shine/internal/render"
 	"shine/internal/source"
 	shinetui "shine/internal/tui"
+	"shine/internal/version"
 )
 
 type options struct {
@@ -47,6 +48,7 @@ func rootCommand() *cobra.Command {
 		Args:          cobra.MaximumNArgs(1),
 		SilenceErrors: true,
 		SilenceUsage:  true,
+		Version:       version.String(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			src, err := source.Read(args)
 			if err != nil {
@@ -99,6 +101,7 @@ func rootCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.showKeys, "show-keys", false, "open the keyboard help panel on launch")
 	cmd.Flags().BoolVar(&opts.debugKeys, "debug-keys", false, "show the last received key in the status line")
 	cmd.AddCommand(completionsCommand(cmd))
+	cmd.AddCommand(versionCommand())
 	return cmd
 }
 
@@ -128,6 +131,17 @@ func completionsCommand(root *cobra.Command) *cobra.Command {
 			default:
 				return fmt.Errorf("unsupported shell %q", args[0])
 			}
+		},
+	}
+}
+
+func versionCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Print shine version",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Fprintln(cmd.OutOrStdout(), version.String())
 		},
 	}
 }

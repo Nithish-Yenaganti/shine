@@ -1,0 +1,16 @@
+# Changelog
+
+All notable changes to `shine` will be documented in this file.
+
+## 0.1.0 - Unreleased
+
+### Added
+
+- Terminal-native Markdown preview for files and stdin.
+- Interactive TUI with scrolling, search, heading outline, help panel, and live reload.
+- Markdown rendering for headings, paragraphs, inline styles, links, task lists, nested lists, block quotes, callouts, tables, code blocks, and image placeholders.
+- Built-in themes: `midnight`, `daylight`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, and `claude`.
+- In-app theme picker with `t`.
+- Agent-friendly modes: `--plain`, `--outline`, and `--check`.
+- Shell completions for bash, zsh, fish, and PowerShell.
+- `--version` output for release verification.

@@ -1,54 +1,82 @@
+![Shine terminal Markdown previewer](internal/tui/assets/shine_dos_rebel_banner.png)
+
 # shine
 
-`shine` is a terminal-native Markdown previewer built with Go and the Charm ecosystem. It parses Markdown into its own render model, lays that model out with Lip Gloss, and shows a cleaner preview than a raw Markdown file.
+`shine` is a terminal-native Markdown previewer built with Go and the Charm ecosystem. It turns Markdown files into a readable TUI preview with themes, tables, callouts, code blocks, search, and agent-friendly output modes.
 
-## Scope
+> Release status: `shine` is not published yet. Current local version is `0.1.0-dev`.
 
-This project focuses only on Markdown preview/rendering:
+## Features
 
-- Markdown files and stdin
-- owned document/block model
-- terminal layout and rendering
-- tables, syntax-highlighted code blocks, callouts, task lists, nested lists, quotes, images as placeholders
-- mixed inline styles for bold, italic, strikethrough, inline code, and links
-- interactive scrolling
-- highlighted search matches
-- heading outline
-- agent-friendly plain, outline, and check modes
-- in-app help panel
-- live reload with `--watch`
-- theme preset support
+- Markdown files and stdin input
+- Owned document/block render model
+- Terminal layout and rendering with Lip Gloss
+- Headings, paragraphs, block quotes, callouts, task lists, nested lists, tables, links, inline styles, code blocks, and image placeholders
+- Interactive scrolling, search, and heading outline
+- Live preview reload with `--watch`
+- In-app help panel and theme picker
+- Built-in themes: `midnight`, `daylight`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, and `claude`
+- Agent-friendly modes: `--plain`, `--outline`, and `--check`
+- Shell completions for bash, zsh, fish, and PowerShell
 
-It does not include AI transcript rendering, Codex/Claude integration, a browser preview, a Markdown editor, collaboration, or remote docs hosting.
+## Non-Goals
 
-## Usage
+`shine` is focused only on Markdown preview/rendering. It does not include AI transcript rendering, Codex/Claude integration, browser preview, Markdown editing, collaboration, or remote docs hosting.
 
-```sh
-shine README.md
-shine --watch README.md
-shine --print README.md
-shine --plain README.md
-shine --outline README.md
-shine --check README.md
-shine --theme daylight README.md
-shine --theme catppuccin-mocha README.md
-shine --show-keys README.md
-shine --debug-keys README.md
-cat README.md | shine
-shine completions zsh > _shine
-```
+## Local Usage
 
-Agent-friendly modes:
+Build the local binary:
 
 ```sh
-shine --plain README.md      # rendered preview without ANSI styling
-shine --outline README.md    # heading outline for quick navigation
-shine --check README.md      # Markdown quality warnings; exits 2 when warnings exist
+go build -o bin/shine ./cmd/shine
 ```
 
-Use `--print` or `--plain` when a coding agent should show a preview directly in chat output. Use the full TUI only when a human is running `shine` in their own terminal.
+Run the TUI preview:
 
-Keyboard controls:
+```sh
+bin/shine README.md
+bin/shine --watch README.md
+cat README.md | bin/shine
+```
+
+Print a rendered preview and exit:
+
+```sh
+bin/shine --print README.md
+bin/shine --plain README.md
+```
+
+Inspect a Markdown file for agents or scripts:
+
+```sh
+bin/shine --outline README.md
+bin/shine --check README.md
+```
+
+Check the version:
+
+```sh
+bin/shine version
+bin/shine --version
+```
+
+Generate shell completions:
+
+```sh
+bin/shine completions zsh > _shine
+```
+
+## Agent-Friendly Modes
+
+Use `--print` or `--plain` when a coding agent should show a Markdown preview directly in chat output. Use the full TUI only when a human is running `shine` in their own terminal.
+
+```sh
+bin/shine --plain README.md      # rendered preview without ANSI styling
+bin/shine --outline README.md    # heading outline for quick navigation
+bin/shine --check README.md      # Markdown quality warnings; exits 2 when warnings exist
+```
+
+## Keyboard Controls
 
 ```text
 q          quit
@@ -70,26 +98,38 @@ h/H/F1     show help panel
 
 ## Themes
 
-Built-in theme presets are `midnight`, `daylight`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, and `claude`. `midnight` is the default. Inside the TUI, press `t` to open the theme picker, use up/down or `j/k`, then press Enter to apply.
-
-`cappuccino` is accepted as an alias for `catppuccin-latte`, and `mocha` is accepted as an alias for `catppuccin-mocha`.
-
-`claude` uses an Anthropic-inspired warm ivory, ink, and clay palette.
+`midnight` is the default theme. Inside the TUI, press `t` to open the theme picker, use up/down or `j/k`, then press Enter to apply.
 
 ```sh
-shine --theme midnight README.md
-shine --theme daylight README.md
-shine --theme mono README.md
-shine --theme catppuccin-latte README.md
-shine --theme catppuccin-mocha README.md
-shine --theme claude README.md
+bin/shine --theme midnight README.md
+bin/shine --theme daylight README.md
+bin/shine --theme mono README.md
+bin/shine --theme catppuccin-latte README.md
+bin/shine --theme catppuccin-mocha README.md
+bin/shine --theme claude README.md
 ```
+
+Aliases:
+
+- `cappuccino` resolves to `catppuccin-latte`
+- `mocha` resolves to `catppuccin-mocha`
+
+The `claude` theme uses an Anthropic-inspired warm ivory, ink, and clay palette.
 
 ## Development
 
 ```sh
 go test ./...
+go vet ./...
 go build -o bin/shine ./cmd/shine
-./bin/shine fixtures/basic.md
-./bin/shine --print fixtures/basic.md
+bin/shine fixtures/basic.md
+bin/shine --print fixtures/basic.md
 ```
+
+## Release Notes
+
+See [CHANGELOG.md](CHANGELOG.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
