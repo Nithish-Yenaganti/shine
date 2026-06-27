@@ -11,9 +11,13 @@
 
 # shine
 
-`shine` is a terminal Markdown previewer. It renders Markdown in a TUI with themes, tables, callouts, code blocks, search, live reload, and script-friendly output modes.
+`shine` is a terminal Markdown previewer. It renders Markdown in a TUI with themes, tables, callouts, code blocks, search, and live reload.
 
 Status: unreleased. Current local version: `0.1.0-dev`.
+
+## Problem
+
+Markdown is easy to write but hard to read raw inside terminal-first workflows. `shine` gives developers a fast rendered view without leaving the terminal, opening a browser, or mentally parsing tables, callouts, nested lists, and code blocks from plain text.
 
 ## Features
 
@@ -21,7 +25,8 @@ Status: unreleased. Current local version: `0.1.0-dev`.
 - TUI preview with scrolling, search, heading outline, help panel, and theme picker
 - Tables, callouts, task lists, nested lists, quotes, links, inline styles, code blocks, and image placeholders
 - Live reload with `--watch`
-- Agent/script modes: `--plain`, `--outline`, `--check`
+- Responsive scrolling for larger Markdown files
+- Non-interactive commands: `--plain`, `--outline`, `--check`
 - Shell completions for bash, zsh, fish, and PowerShell
 
 ## Install

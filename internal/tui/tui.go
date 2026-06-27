@@ -43,6 +43,7 @@ type model struct {
 	width      int
 	height     int
 	content    string
+	totalLines int
 	headings   []shinemodel.HeadingRef
 	matches    []int
 	matchIndex int
@@ -64,6 +65,7 @@ func Run(opts Options) error {
 	input.Prompt = "/"
 	input.CharLimit = 128
 
+	content := render.New(88, opts.Theme).Render(doc)
 	m := model{
 		source:     opts.Source,
 		theme:      opts.Theme,
@@ -73,7 +75,8 @@ func Run(opts Options) error {
 		help:       opts.ShowKeys,
 		themeIndex: themeIndex(opts.Theme.Name),
 		debugKeys:  opts.DebugKeys,
-		content:    render.New(88, opts.Theme).Render(doc),
+		content:    content,
+		totalLines: lineCount(content),
 		status:     "shine",
 	}
 	m.headings = doc.Headings
@@ -254,6 +257,7 @@ func (m *model) reloadRender() {
 		width = 88
 	}
 	m.content = render.New(width, m.theme).Render(doc)
+	m.totalLines = lineCount(m.content)
 	m.headings = doc.Headings
 	m.applySearch()
 }
@@ -370,7 +374,7 @@ func (m model) statusLine() string {
 	if m.watch {
 		watch = "watch:on"
 	}
-	totalLines := max(1, len(strings.Split(m.content, "\n")))
+	totalLines := max(1, m.totalLines)
 	currentLine := min(totalLines, m.viewport.YOffset+1)
 	search := "matches:0"
 	if len(m.matches) > 0 {
@@ -461,38 +465,15 @@ func (m model) style() lipgloss.Style {
 }
 
 func (m model) screen(body string, status string) string {
-	if m.theme.Background == "" {
-		return body + "\n" + status
-	}
-	width := m.width
-	if width == 0 {
-		width = 88
-	}
-	height := m.height
-	if height == 0 {
-		height = len(strings.Split(body, "\n")) + 1
-	}
-	bodyHeight := max(0, height-1)
-	bodyLines := strings.Split(body, "\n")
-	if len(bodyLines) > bodyHeight {
-		bodyLines = bodyLines[:bodyHeight]
-	}
-	lines := append(bodyLines, status)
-	for len(lines) < height {
-		lines = append(lines, "")
-	}
-	for i, line := range lines {
-		lines[i] = m.paintLine(line, width)
-	}
-	return strings.Join(lines, "\n")
+	return body + "\n" + status
 }
 
-func (m model) paintLine(line string, width int) string {
-	lineWidth := lipgloss.Width(line)
-	if lineWidth >= width {
-		return line
+func lineCount(value string) int {
+	value = strings.TrimRight(value, "\n")
+	if value == "" {
+		return 0
 	}
-	return line + strings.Repeat(" ", width-lineWidth)
+	return strings.Count(value, "\n") + 1
 }
 
 func watchFile(path string) tea.Cmd {

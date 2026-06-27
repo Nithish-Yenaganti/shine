@@ -9,9 +9,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/Nithish-Yenaganti/shine/internal/config"
+	"github.com/Nithish-Yenaganti/shine/internal/source"
 )
 
-func TestDaylightScreenFillsWindow(t *testing.T) {
+func TestBackgroundScreenDoesNotPadRows(t *testing.T) {
 	m := model{
 		theme:  config.ThemeByName("daylight"),
 		width:  80,
@@ -20,16 +21,30 @@ func TestDaylightScreenFillsWindow(t *testing.T) {
 
 	screen := m.screen("hello", "status")
 	lines := strings.Split(screen, "\n")
-	if len(lines) != 4 {
-		t.Fatalf("expected screen to fill 4 rows, got %d", len(lines))
+	if len(lines) != 2 {
+		t.Fatalf("expected screen to render body and status only, got %d rows", len(lines))
 	}
-	for _, line := range lines {
-		if got := lipgloss.Width(line); got != 80 {
-			t.Fatalf("expected screen row to fill width 80, got %d for %q", got, line)
-		}
+	if got := lipgloss.Width(lines[0]); got != 5 {
+		t.Fatalf("expected body row to avoid padding, got width %d for %q", got, lines[0])
 	}
 	if strings.Contains(screen, "\x1b[") {
-		t.Fatalf("daylight screen filler should not paint ANSI backgrounds: %q", screen)
+		t.Fatalf("background screen should not paint ANSI backgrounds: %q", screen)
+	}
+}
+
+func TestStatusLineUsesCachedTotalLines(t *testing.T) {
+	m := model{
+		theme:      config.ThemeByName("mono"),
+		source:     sourceForTest("test.md"),
+		viewport:   viewport.New(20, 4),
+		content:    "one\ntwo",
+		totalLines: 42,
+	}
+	m.viewport.YOffset = 2
+
+	status := m.statusLine()
+	if !strings.Contains(status, "line:3/42") {
+		t.Fatalf("expected cached line count in status, got %q", status)
 	}
 }
 
@@ -172,4 +187,8 @@ func updateKeyMsg(t *testing.T, m model, msg tea.KeyMsg) model {
 		t.Fatalf("expected model update, got %T", updated)
 	}
 	return got
+}
+
+func sourceForTest(name string) source.Source {
+	return source.Source{Name: name}
 }
