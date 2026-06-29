@@ -9,61 +9,20 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: linux-amd64
-            goos: linux
-            goarch: amd64
-            archive: tar.gz
-          - os: macos-latest
-            target: darwin-amd64
-            goos: darwin
-            goarch: amd64
-            archive: tar.gz
-          - os: macos-latest
-            target: darwin-arm64
-            goos: darwin
-            goarch: arm64
-            archive: tar.gz
-          - os: windows-latest
-            target: windows-amd64
-            goos: windows
-            goarch: amd64
-            archive: zip
-
+  goreleaser:
+    name: GoReleaser
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Build Unix
-        if: matrix.archive == 'tar.gz'
-        run: |
-          mkdir -p dist
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o dist/shine ./cmd/shine
-      - name: Build Windows
-        if: matrix.archive == 'zip'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force dist
-          $env:GOOS="${{ matrix.goos }}"
-          $env:GOARCH="${{ matrix.goarch }}"
-          go build -o dist/shine.exe ./cmd/shine
-      - name: Package Unix
-        if: matrix.archive == 'tar.gz'
-        run: |
-          tar -C dist -czf shine-${{ matrix.target }}.tar.gz shine
-      - name: Package Windows
-        if: matrix.archive == 'zip'
-        shell: pwsh
-        run: |
-          Compress-Archive -Path dist/shine.exe -DestinationPath shine-${{ matrix.target }}.zip
-      - uses: softprops/action-gh-release@v2
+      - uses: goreleaser/goreleaser-action@v6
         with:
-          files: shine-${{ matrix.target }}.*
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

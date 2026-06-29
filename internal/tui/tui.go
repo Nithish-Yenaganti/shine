@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -54,6 +53,9 @@ type model struct {
 }
 
 type fileChanged struct{}
+type watchFailed struct {
+	err error
+}
 type terminalBackgroundMsg struct{}
 
 func Run(opts Options) error {
@@ -116,6 +118,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.watch && m.source.Path != "" {
 			return m, watchFile(m.source.Path)
 		}
+	case watchFailed:
+		m.err = msg.err
 	case tea.KeyMsg:
 		m.lastKey = keyLabel(msg)
 		if m.themeMenu {
@@ -480,22 +484,26 @@ func watchFile(path string) tea.Cmd {
 	return func() tea.Msg {
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
-			return fileChanged{}
+			return watchFailed{err: err}
 		}
 		defer watcher.Close()
-		_ = watcher.Add(path)
-		timer := time.NewTimer(30 * time.Second)
-		defer timer.Stop()
+		if err := watcher.Add(path); err != nil {
+			return watchFailed{err: err}
+		}
 		for {
 			select {
-			case event := <-watcher.Events:
-				if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return watchFailed{err: fmt.Errorf("file watcher closed")}
+				}
+				if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) || event.Has(fsnotify.Rename) || event.Has(fsnotify.Remove) {
 					return fileChanged{}
 				}
-			case <-watcher.Errors:
-				return fileChanged{}
-			case <-timer.C:
-				return fileChanged{}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return watchFailed{err: fmt.Errorf("file watcher closed")}
+				}
+				return watchFailed{err: err}
 			}
 		}
 	}

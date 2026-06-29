@@ -26,7 +26,7 @@ Markdown is easy to write but hard to read raw inside terminal-first workflows. 
 - Tables, callouts, task lists, nested lists, quotes, links, inline styles, code blocks, and image placeholders
 - Live reload with `--watch`
 - Responsive scrolling for larger Markdown files
-- Non-interactive commands: `--plain`, `--outline`, `--check`
+- Non-interactive commands: `--print`, `--plain`, `--outline`, `--check`
 - Shell completions for bash, zsh, fish, and PowerShell
 
 ## Install
@@ -117,7 +117,7 @@ Aliases:
 
 ## Release
 
-GoReleaser builds macOS and Linux archives:
+Tagged releases are built by the GitHub release workflow through GoReleaser. To verify the release configuration locally:
 
 ```sh
 goreleaser check
@@ -135,7 +135,6 @@ Publish after tagging:
 ```sh
 git tag v0.1.0
 git push origin v0.1.0
-goreleaser release --clean
 npm publish --access public
 ```
 
