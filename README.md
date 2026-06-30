@@ -11,19 +11,20 @@
 
 # shine
 
-`shine` is a terminal Markdown previewer. It renders Markdown in a TUI with themes, tables, callouts, code blocks, search, and live reload.
+`shine` is a terminal Markdown previewer and docs quality checker for README, changelog, and release-note workflows. It renders Markdown in a TUI with themes, tables, callouts, code blocks, search, live reload, and checks that catch common publishing mistakes before they land.
 
 Status: unreleased. Current local version: `0.1.0-dev`.
 
 ## Problem
 
-Markdown is easy to write but hard to read raw inside terminal-first workflows. `shine` gives developers a fast rendered view without leaving the terminal, opening a browser, or mentally parsing tables, callouts, nested lists, and code blocks from plain text.
+Markdown is easy to write but awkward to review raw inside terminal-first workflows. `shine` gives developers a fast rendered view without leaving the terminal, then checks whether the document is ready to publish: heading structure, missing alt text, broken local links and images, duplicate headings, and hard-to-scan tables.
 
 ## Features
 
 - Markdown files and stdin
 - TUI preview with scrolling, search, heading outline, help panel, and theme picker
 - Tables, callouts, task lists, nested lists, quotes, links, inline styles, code blocks, and image placeholders
+- Docs checks for heading structure, duplicate headings, image alt text, local links/images, and long table cells
 - Live reload with `--watch`
 - Responsive scrolling for larger Markdown files
 - Non-interactive commands: `--print`, `--plain`, `--outline`, `--check`
@@ -65,6 +66,24 @@ bin/shine --plain README.md
 bin/shine --outline README.md
 bin/shine --check README.md
 ```
+
+## Docs Review
+
+Use `--check` before publishing README files, changelogs, release notes, or docs pages:
+
+```sh
+bin/shine --check README.md
+```
+
+`shine` reports issues that are easy to miss in raw Markdown:
+
+- missing or misplaced H1 headings
+- skipped heading levels
+- duplicate heading text
+- missing image alt text
+- broken local image and link targets
+- raw URL link text
+- uneven or hard-to-scan tables
 
 Other commands:
 

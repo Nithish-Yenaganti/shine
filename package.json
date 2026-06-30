@@ -1,7 +1,7 @@
 {
   "name": "@nithish-yenaganti/shine",
   "version": "0.1.0",
-  "description": "Terminal-native Markdown previewer built with Go and the Charm ecosystem.",
+  "description": "Terminal Markdown previewer and docs quality checker for README, changelog, and release-note workflows.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -38,9 +38,12 @@
   },
   "keywords": [
     "markdown",
+    "docs",
+    "readme",
     "terminal",
     "tui",
     "preview",
+    "lint",
     "charm"
   ]
 }

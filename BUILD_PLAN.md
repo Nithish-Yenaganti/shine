@@ -2,7 +2,7 @@
 
 ## Product Decision
 
-Build `shine` as a Go + Charm terminal Markdown previewer that feels visually polished and web-like while preserving the core idea: an owned Markdown render model and a terminal-native preview experience.
+Build `shine` as a Go + Charm terminal Markdown previewer and docs quality checker that feels visually polished and web-like while preserving the core idea: an owned Markdown render model and a terminal-native review experience.
 
 Core pipeline:
 
@@ -32,7 +32,8 @@ fsnotify        live reload
 - Product name: `shine`.
 - Parse Markdown into an owned block model, not a Glamour/Glow wrapper.
 - Support headings, paragraphs, bold, italic, inline code, links, quotes, callouts, task lists, tables, code blocks, dividers, and images.
-- Keep CLI behavior: file input, stdin input, `--print`, `--watch`, themes, and shell completions.
+- Keep CLI behavior: file input, stdin input, `--print`, `--check`, `--watch`, themes, and shell completions.
+- Make `--check` useful for README, changelog, and release-note review by catching publishing mistakes before docs land.
 - Use Bubble Tea for interactive TUI behavior.
 - Use Lip Gloss for visual presentation.
 - Use Bubbles where useful for viewport and search input.
