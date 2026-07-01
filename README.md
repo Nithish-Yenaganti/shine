@@ -34,6 +34,8 @@ Markdown is easy to write but awkward to review raw inside terminal-first workfl
 
 Most Markdown tools answer one question: "what does this look like?" `shine` answers that and the next one: "is this ready to publish?"
 
+Developers already have Markdown viewers, but many still want a faster terminal-native way to read, preview, and verify docs without jumping into an editor or browser.
+
 Use it when you want a terminal-native review pass for README files, changelogs, release notes, or docs pages before they reach GitHub, npm, or a release.
 
 That matters because project docs are often the first thing users see. Broken headings, missing image alt text, dead local links, and hard-to-read tables can make a solid project feel unfinished. `shine` keeps the review loop close to where developers already work: preview the Markdown, inspect the outline, and catch publish-blocking issues without opening a browser or editor preview.
