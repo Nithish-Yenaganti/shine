@@ -36,6 +36,16 @@ Most Markdown tools answer one question: "what does this look like?" `shine` ans
 
 Use it when you want a terminal-native review pass for README files, changelogs, release notes, or docs pages before they reach GitHub, npm, or a release.
 
+That matters because project docs are often the first thing users see. Broken headings, missing image alt text, dead local links, and hard-to-read tables can make a solid project feel unfinished. `shine` keeps the review loop close to where developers already work: preview the Markdown, inspect the outline, and catch publish-blocking issues without opening a browser or editor preview.
+
+In practice, `shine` helps you:
+
+- preview Markdown without leaving the terminal
+- catch docs problems before publishing
+- review README, changelog, and release-note changes faster
+- use `--check` in CI to stop broken docs from landing
+- keep terminal-first workflows lightweight
+
 ## Install
 
 Install the latest release with Go or npm:
