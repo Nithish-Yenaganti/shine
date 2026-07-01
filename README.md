@@ -212,6 +212,13 @@ go build -o bin/shine ./cmd/shine
 npm run test:npm
 ```
 
+## Community
+
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+- Use [SUPPORT.md](SUPPORT.md) for help and issue guidance.
+- Report vulnerabilities through [SECURITY.md](SECURITY.md).
+- Follow the project [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
