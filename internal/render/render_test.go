@@ -115,3 +115,17 @@ func TestDaylightDoesNotPaintTokenBackgrounds(t *testing.T) {
 		t.Fatalf("daylight renderer should not paint token backgrounds, got %v", bg)
 	}
 }
+
+func TestInlineRelativePathKeepsSpace(t *testing.T) {
+	doc, err := parser.Parse([]byte("- `go test ./...`\n- `go build ./cmd/shine`\n"), "test.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := New(64, config.ThemeByName("mono")).Render(doc)
+	if strings.Contains(out, "test./...") || strings.Contains(out, "build./cmd") {
+		t.Fatalf("relative paths should not stick to previous words:\n%s", out)
+	}
+	if !strings.Contains(out, "go test ./...") || !strings.Contains(out, "go build ./cmd/shine") {
+		t.Fatalf("missing spaced relative path commands:\n%s", out)
+	}
+}

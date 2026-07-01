@@ -516,6 +516,9 @@ func sticks(text string) bool {
 	if text == "" {
 		return false
 	}
+	if strings.HasPrefix(text, "./") || strings.HasPrefix(text, "../") {
+		return false
+	}
 	switch []rune(text)[0] {
 	case '.', ',', ';', ':', '!', '?', ')', ']', '}':
 		return true

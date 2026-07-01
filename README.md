@@ -13,7 +13,7 @@
 
 `shine` is a terminal Markdown previewer and docs quality checker for README, changelog, and release-note workflows. It renders Markdown in a TUI with themes, tables, callouts, code blocks, search, live reload, and checks that catch common publishing mistakes before they land.
 
-Status: unreleased. Current local version: `0.1.0-dev`.
+Current version: `0.1.0`.
 
 ## Problem
 
@@ -30,9 +30,22 @@ Markdown is easy to write but awkward to review raw inside terminal-first workfl
 - Non-interactive commands: `--print`, `--plain`, `--outline`, `--check`
 - Shell completions for bash, zsh, fish, and PowerShell
 
+## Why Shine?
+
+Most Markdown tools answer one question: "what does this look like?" `shine` answers that and the next one: "is this ready to publish?"
+
+Use it when you want a terminal-native review pass for README files, changelogs, release notes, or docs pages before they reach GitHub, npm, or a release.
+
 ## Install
 
-Until the first release is published, build from source:
+Install the latest release with Go or npm:
+
+```sh
+go install github.com/Nithish-Yenaganti/shine/cmd/shine@latest
+npm install -g @nithish-yenaganti/shine
+```
+
+Or build from source:
 
 ```sh
 git clone https://github.com/Nithish-Yenaganti/shine.git
@@ -41,16 +54,17 @@ go build -o bin/shine ./cmd/shine
 bin/shine version
 ```
 
-After the first tagged release:
-
-```sh
-go install github.com/Nithish-Yenaganti/shine/cmd/shine@latest
-npm install -g @nithish-yenaganti/shine
-```
-
 Homebrew support is planned but not configured yet.
 
 ## Usage
+
+```sh
+shine README.md
+shine --watch README.md
+cat README.md | shine
+```
+
+When building from source in this repository, use `bin/shine`:
 
 ```sh
 bin/shine README.md
@@ -84,6 +98,15 @@ bin/shine --check README.md
 - broken local image and link targets
 - raw URL link text
 - uneven or hard-to-scan tables
+
+Example output:
+
+```text
+3 markdown warning(s):
+- heading "Install" jumps from H1 to H3
+- block 5 link file not found: ./missing.md
+- block 7 table row 2 column 3 is very long
+```
 
 Other commands:
 
@@ -158,6 +181,15 @@ npm publish --access public
 ```
 
 The npm package is a thin wrapper that downloads the matching GitHub release binary during `postinstall`.
+
+Release checklist:
+
+- `go test ./...`
+- `go vet ./...`
+- `go build -o bin/shine ./cmd/shine`
+- `npm run test:npm`
+- `bin/shine --check README.md`
+- `goreleaser check`
 
 ## Development
 

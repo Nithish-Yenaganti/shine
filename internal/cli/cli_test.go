@@ -29,7 +29,7 @@ func TestVersionCommand(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(out.String()); got != "0.1.0-dev" {
+	if got := strings.TrimSpace(out.String()); got != "0.1.0" {
 		t.Fatalf("version output = %q", got)
 	}
 }
