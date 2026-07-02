@@ -13,7 +13,7 @@ Markdown is easy to write but awkward to review raw inside terminal-first workfl
 ## Features
 
 - Markdown files and stdin
-- TUI preview with scrolling, search, heading outline, help panel, theme picker, and terminal-width padding
+- TUI preview with scrolling, search, heading outline, help panel, theme picker, and right-side terminal padding
 - Tables, callouts, task lists, nested lists, quotes, links, inline styles, code blocks, and local image previews in Kitty/Ghostty-compatible terminals
 - Text image placeholders for unsupported terminals, remote images, missing files, and non-interactive output
 - Docs checks for heading structure, duplicate headings, image alt text, local links/images, and long table cells

@@ -23,7 +23,7 @@ All notable changes to `shine` will be documented in this file.
 
 - Changed the default theme to `mono`.
 - Resolved local image paths relative to the Markdown source file and kept non-interactive output as text placeholders.
-- Added responsive horizontal padding to the interactive TUI while keeping wrapped content inside the usable terminal width.
+- Added right-side terminal padding to the interactive TUI while keeping wrapped content inside the usable terminal width.
 - Preserved terminal image placeholder escapes during search highlighting so inline image previews continue to render.
 - Optimized TUI scrolling by avoiding per-frame row padding, width measurement, and line-count recomputation.
 - Avoided unnecessary `--watch` reloads when no file changes have occurred.
