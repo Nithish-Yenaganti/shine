@@ -9,7 +9,7 @@ All notable changes to `shine` will be documented in this file.
 - Terminal-native Markdown preview and docs quality checking for files and stdin.
 - Interactive TUI with scrolling, search, heading outline, help panel, and live reload.
 - Markdown rendering for headings, paragraphs, inline styles, links, task lists, nested lists, block quotes, callouts, tables, code blocks, and image placeholders.
-- Built-in themes: `midnight`, `daylight`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, `claude`, `everforest`, `jellybeans`, and `gotham`.
+- Built-in themes: `tomorrow-night`, `github`, `mono`, `catppuccin-latte`, `catppuccin-mocha`, `claude`, `everforest`, `jellybeans`, and `gotham`.
 - In-app theme picker with `t`.
 - Non-interactive modes: `--print`, `--plain`, `--outline`, and `--check`.
 - Docs checks for skipped heading levels, duplicate headings, multiple H1s, broken local links, raw URL link text, empty table headers, and long table cells.

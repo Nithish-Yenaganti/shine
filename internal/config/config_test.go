@@ -17,6 +17,8 @@ func TestThemeNamesResolve(t *testing.T) {
 func TestThemeAliasesResolveToRealThemeNames(t *testing.T) {
 	tests := map[string]string{
 		"cappuccino": "catppuccin-latte",
+		"daylight":   "github",
+		"midnight":   "tomorrow-night",
 		"mocha":      "catppuccin-mocha",
 	}
 	for alias, want := range tests {
@@ -26,16 +28,16 @@ func TestThemeAliasesResolveToRealThemeNames(t *testing.T) {
 	}
 }
 
-func TestMidnightThemeUsesTomorrowNightPalette(t *testing.T) {
-	theme := ThemeByName("midnight")
+func TestTomorrowNightThemeUsesTomorrowNightPalette(t *testing.T) {
+	theme := ThemeByName("tomorrow-night")
 	if theme.Background != "#1d1f21" {
-		t.Fatalf("expected midnight background to use Tomorrow Night base, got %q", theme.Background)
+		t.Fatalf("expected tomorrow-night background to use Tomorrow Night base, got %q", theme.Background)
 	}
 	if theme.Body != "#c5c8c6" || theme.Muted != "#969896" || theme.Border != "#373b41" {
-		t.Fatalf("expected midnight neutrals to use Tomorrow Night palette, got body=%q muted=%q border=%q", theme.Body, theme.Muted, theme.Border)
+		t.Fatalf("expected tomorrow-night neutrals to use Tomorrow Night palette, got body=%q muted=%q border=%q", theme.Body, theme.Muted, theme.Border)
 	}
 	if theme.Heading != "#81a2be" || theme.Link != "#8abeb7" || theme.InlineCode != "#de935f" {
-		t.Fatalf("expected midnight accents to use Tomorrow Night palette, got heading=%q link=%q inline=%q", theme.Heading, theme.Link, theme.InlineCode)
+		t.Fatalf("expected tomorrow-night accents to use Tomorrow Night palette, got heading=%q link=%q inline=%q", theme.Heading, theme.Link, theme.InlineCode)
 	}
 }
 

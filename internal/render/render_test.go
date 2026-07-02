@@ -84,12 +84,12 @@ func TestAsciiCodeBlockDoesNotShowLineNumbers(t *testing.T) {
 	}
 }
 
-func TestDaylightCodeUsesReadableRawLines(t *testing.T) {
-	r := New(48, config.ThemeByName("daylight"))
+func TestGitHubCodeUsesReadableRawLines(t *testing.T) {
+	r := New(48, config.ThemeByName("github"))
 	lines := r.codeLines("fn main() {\n    fmt.Println(\"hi\")\n}", "go")
 	got := strings.Join(lines, "\n")
 	if strings.Contains(got, "\x1b[") {
-		t.Fatalf("daylight code should not contain nested ANSI highlighting: %q", got)
+		t.Fatalf("github code should not contain nested ANSI highlighting: %q", got)
 	}
 	if !strings.Contains(got, "fmt.Println") {
 		t.Fatalf("missing code content: %q", got)
@@ -108,11 +108,11 @@ func TestClaudeCodeUsesThemeReadableRawLines(t *testing.T) {
 	}
 }
 
-func TestDaylightDoesNotPaintTokenBackgrounds(t *testing.T) {
-	r := New(48, config.ThemeByName("daylight"))
+func TestGitHubDoesNotPaintTokenBackgrounds(t *testing.T) {
+	r := New(48, config.ThemeByName("github"))
 	bg := r.style().GetBackground()
 	if _, ok := bg.(lipgloss.NoColor); !ok {
-		t.Fatalf("daylight renderer should not paint token backgrounds, got %v", bg)
+		t.Fatalf("github renderer should not paint token backgrounds, got %v", bg)
 	}
 }
 

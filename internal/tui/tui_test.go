@@ -14,7 +14,7 @@ import (
 
 func TestBackgroundScreenDoesNotPadRows(t *testing.T) {
 	m := model{
-		theme:  config.ThemeByName("daylight"),
+		theme:  config.ThemeByName("github"),
 		width:  80,
 		height: 4,
 	}
@@ -150,7 +150,7 @@ func TestDebugKeysShowsLastKey(t *testing.T) {
 
 func TestThemeMenuAppliesSelectedTheme(t *testing.T) {
 	m := model{
-		theme:    config.ThemeByName("midnight"),
+		theme:    config.ThemeByName("tomorrow-night"),
 		viewport: viewport.New(40, 8),
 		content:  "# title\n",
 	}
@@ -169,8 +169,8 @@ func TestThemeMenuAppliesSelectedTheme(t *testing.T) {
 	if m.themeMenu {
 		t.Fatalf("expected enter to close theme menu")
 	}
-	if m.theme.Name != "daylight" {
-		t.Fatalf("expected selected theme daylight, got %q", m.theme.Name)
+	if m.theme.Name != "github" {
+		t.Fatalf("expected selected theme github, got %q", m.theme.Name)
 	}
 }
 

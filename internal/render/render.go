@@ -289,7 +289,7 @@ func (r Renderer) showCodeLineNumbers(language string) bool {
 
 func (r Renderer) codeLines(code string, language string) []string {
 	raw := splitCode(code)
-	if r.Theme.Name == "mono" || r.Theme.Name == "daylight" || r.Theme.Name == "claude" {
+	if r.Theme.Name == "mono" || r.Theme.Name == "github" || r.Theme.Name == "claude" {
 		return raw
 	}
 	lexer := lexers.Get(language)
@@ -304,7 +304,7 @@ func (r Renderer) codeLines(code string, language string) []string {
 		return raw
 	}
 	styleName := "github-dark"
-	if r.Theme.Name == "daylight" {
+	if r.Theme.Name == "github" {
 		styleName = "github"
 	}
 	style := styles.Get(styleName)

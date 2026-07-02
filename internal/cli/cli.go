@@ -41,7 +41,7 @@ func Execute() {
 }
 
 func rootCommand() *cobra.Command {
-	opts := &options{theme: "midnight", width: 88}
+	opts := &options{theme: "tomorrow-night", width: 88}
 	cmd := &cobra.Command{
 		Use:           "shine [file]",
 		Short:         "Preview Markdown beautifully inside the terminal",
@@ -95,7 +95,7 @@ func rootCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&opts.plain, "plain", false, "print the rendered document without ANSI styling and exit")
 	cmd.Flags().BoolVar(&opts.outline, "outline", false, "print a Markdown heading outline and exit")
 	cmd.Flags().BoolVar(&opts.check, "check", false, "check Markdown quality and exit with code 2 when warnings are found")
-	cmd.Flags().StringVar(&opts.theme, "theme", "midnight", "theme preset: midnight, daylight, mono, catppuccin-latte, catppuccin-mocha, claude, everforest, jellybeans, gotham")
+	cmd.Flags().StringVar(&opts.theme, "theme", "tomorrow-night", "theme preset: tomorrow-night, github, mono, catppuccin-latte, catppuccin-mocha, claude, everforest, jellybeans, gotham")
 	cmd.Flags().IntVar(&opts.width, "width", 88, "render width for --print mode")
 	cmd.Flags().BoolVar(&opts.noAltScreen, "no-alt-screen", false, "disable alternate screen mode")
 	cmd.Flags().BoolVar(&opts.showKeys, "show-keys", false, "open the keyboard help panel on launch")

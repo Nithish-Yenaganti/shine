@@ -22,14 +22,14 @@ type Theme struct {
 }
 
 func ThemeNames() []string {
-	return []string{"midnight", "daylight", "mono", "catppuccin-latte", "catppuccin-mocha", "claude", "everforest", "jellybeans", "gotham"}
+	return []string{"tomorrow-night", "github", "mono", "catppuccin-latte", "catppuccin-mocha", "claude", "everforest", "jellybeans", "gotham"}
 }
 
 func ThemeByName(name string) Theme {
 	switch name {
-	case "daylight":
+	case "github", "daylight":
 		return Theme{
-			Name:            "daylight",
+			Name:            "github",
 			Background:      "#ffffff",
 			Heading:         "#0f4c81",
 			Body:            "#24292f",
@@ -175,7 +175,7 @@ func ThemeByName(name string) Theme {
 			CodeLineNumbers: true,
 		}
 	case "mono":
-		t := ThemeByName("midnight")
+		t := ThemeByName("tomorrow-night")
 		t.Name = "mono"
 		t.Background = ""
 		t.Heading = "15"
@@ -193,9 +193,9 @@ func ThemeByName(name string) Theme {
 		t.CalloutWarning = "15"
 		t.CodeLineNumbers = false
 		return t
-	default:
+	case "tomorrow-night", "midnight":
 		return Theme{
-			Name:            "midnight",
+			Name:            "tomorrow-night",
 			Background:      "#1d1f21",
 			Heading:         "#81a2be",
 			Body:            "#c5c8c6",
@@ -214,5 +214,7 @@ func ThemeByName(name string) Theme {
 			BlockGap:        1,
 			CodeLineNumbers: true,
 		}
+	default:
+		return ThemeByName("tomorrow-night")
 	}
 }
