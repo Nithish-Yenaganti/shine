@@ -14,7 +14,7 @@ function binaryPath() {
 const bin = binaryPath();
 if (!fs.existsSync(bin)) {
   console.error("shine binary was not found.");
-  console.error("Run `npm rebuild @nithish-yenaganti/shine` or reinstall the package.");
+  console.error("Run `npm rebuild @nk02/shine` or reinstall the package.");
   console.error("For local development, set SHINE_BINARY_PATH=bin/shine.");
   process.exit(1);
 }

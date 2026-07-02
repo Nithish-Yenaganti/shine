@@ -46,7 +46,7 @@ Install the latest release with Go or npm:
 
 ```sh
 go install github.com/Nithish-Yenaganti/shine/cmd/shine@latest
-npm install -g @nithish-yenaganti/shine
+npm install -g @nk02/shine
 ```
 
 Or build from source:
