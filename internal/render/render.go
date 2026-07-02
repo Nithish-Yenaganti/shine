@@ -2,7 +2,13 @@ package render
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
+	"hash/fnv"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	"image/png"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,8 +24,10 @@ import (
 )
 
 type Renderer struct {
-	Width int
-	Theme config.Theme
+	Width        int
+	Theme        config.Theme
+	SourcePath   string
+	RenderImages bool
 }
 
 type richWord struct {
@@ -32,6 +40,16 @@ func New(width int, theme config.Theme) Renderer {
 		width = 32
 	}
 	return Renderer{Width: width, Theme: theme}
+}
+
+func (r Renderer) WithSourcePath(path string) Renderer {
+	r.SourcePath = path
+	return r
+}
+
+func (r Renderer) WithImages(enabled bool) Renderer {
+	r.RenderImages = enabled
+	return r
 }
 
 func (r Renderer) Render(doc model.Document) string {
@@ -323,15 +341,153 @@ func (r Renderer) codeLines(code string, language string) []string {
 }
 
 func (r Renderer) image(block model.Block) string {
-	status := "image preview unavailable in this terminal"
-	if terminalImageProtocol() != "" && localFileExists(block.URL) {
-		status = "local image can render in " + terminalImageProtocol()
+	path, ok := r.localImagePath(block.URL)
+	protocol := terminalImageProtocol()
+	status := "image preview requires kitty-compatible graphics"
+	if isExternalTarget(block.URL) {
+		status = "image preview unavailable for remote images"
+	} else if !ok {
+		status = "local image file not found"
+	} else if r.RenderImages && supportsKittyGraphics(protocol) {
+		if preview, err := r.kittyImage(path); err == nil {
+			return strings.Join([]string{
+				r.mutedStyle().Render("image  ") + r.bodyStyle().Bold(true).Render(block.Alt),
+				preview,
+				r.mutedStyle().Render("       ") + r.linkStyle().Render(block.URL),
+			}, "\n")
+		}
+		status = "image preview failed"
+	} else if supportsKittyGraphics(protocol) {
+		status = protocol + " image preview disabled in text output"
 	}
 	return strings.Join([]string{
 		r.mutedStyle().Render("image  ") + r.bodyStyle().Bold(true).Render(block.Alt),
 		r.mutedStyle().Render("       ") + r.linkStyle().Render(block.URL),
 		r.mutedStyle().Render("       " + status),
 	}, "\n")
+}
+
+func (r Renderer) kittyImage(path string) (string, error) {
+	cols, rows, format, err := r.imageCellSize(path)
+	if err != nil {
+		return "", err
+	}
+	imageID := kittyImageID(path)
+	if format != "png" {
+		return r.kittyImageData(path, imageID, cols, rows)
+	}
+	payload := base64.StdEncoding.EncodeToString([]byte(path))
+	escape := fmt.Sprintf("\x1b_Ga=T,q=2,f=100,t=f,U=1,i=%d,c=%d,r=%d;%s\x1b\\", imageID, cols, rows, payload)
+	return escape + kittyPlaceholder(imageID, cols, rows), nil
+}
+
+func (r Renderer) kittyImageData(path string, imageID int, cols int, rows int) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return "", err
+	}
+	var pngBytes bytes.Buffer
+	if err := png.Encode(&pngBytes, img); err != nil {
+		return "", err
+	}
+	payload := base64.StdEncoding.EncodeToString(pngBytes.Bytes())
+	escape := kittyChunks(payload, fmt.Sprintf("a=T,q=2,f=100,U=1,i=%d,c=%d,r=%d", imageID, cols, rows))
+	return escape + kittyPlaceholder(imageID, cols, rows), nil
+}
+
+func kittyChunks(payload string, firstControl string) string {
+	const chunkSize = 4096
+	if len(payload) <= chunkSize {
+		return fmt.Sprintf("\x1b_G%s;%s\x1b\\", firstControl, payload)
+	}
+	var chunks []string
+	for start := 0; start < len(payload); start += chunkSize {
+		end := min(start+chunkSize, len(payload))
+		more := "0"
+		if end < len(payload) {
+			more = "1"
+		}
+		control := "m=" + more
+		if start == 0 {
+			control = firstControl + ",m=" + more
+		}
+		chunks = append(chunks, fmt.Sprintf("\x1b_G%s;%s\x1b\\", control, payload[start:end]))
+	}
+	return strings.Join(chunks, "")
+}
+
+func kittyImageID(path string) int {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(path))
+	id := int(h.Sum32() & 0x00ffffff)
+	if id == 0 {
+		return 1
+	}
+	return id
+}
+
+func kittyPlaceholder(imageID int, cols int, rows int) string {
+	if cols > len(kittyDiacritics) || rows > len(kittyDiacritics) {
+		cols = min(cols, len(kittyDiacritics))
+		rows = min(rows, len(kittyDiacritics))
+	}
+	var b strings.Builder
+	red := (imageID >> 16) & 0xff
+	green := (imageID >> 8) & 0xff
+	blue := imageID & 0xff
+	for row := 0; row < rows; row++ {
+		if row > 0 {
+			b.WriteByte('\n')
+		}
+		b.WriteString(fmt.Sprintf("\x1b[38;2;%d;%d;%dm", red, green, blue))
+		for col := 0; col < cols; col++ {
+			b.WriteRune('\U0010eeee')
+			b.WriteRune(kittyDiacritics[row])
+			b.WriteRune(kittyDiacritics[col])
+		}
+		b.WriteString("\x1b[39m")
+	}
+	return b.String()
+}
+
+var kittyDiacritics = []rune{
+	'\u0305', '\u030d', '\u030e', '\u0310', '\u0312', '\u033d', '\u033e', '\u033f',
+	'\u0346', '\u034a', '\u034b', '\u034c', '\u0350', '\u0351', '\u0352', '\u0357',
+	'\u035b', '\u0363', '\u0364', '\u0365', '\u0366', '\u0367', '\u0368', '\u0369',
+	'\u036a', '\u036b', '\u036c', '\u036d', '\u036e', '\u036f', '\u0483', '\u0484',
+	'\u0485', '\u0486', '\u0487', '\u0592', '\u0593', '\u0594', '\u0595', '\u0597',
+	'\u0598', '\u0599', '\u059c', '\u059d', '\u059e', '\u059f', '\u05a0', '\u05a1',
+	'\u05a8', '\u05a9', '\u05ab', '\u05ac', '\u05af', '\u05c4', '\u0610', '\u0611',
+	'\u0612', '\u0613', '\u0614', '\u0615', '\u0616', '\u0617', '\u0657', '\u0658',
+	'\u0659', '\u065a', '\u065b', '\u065d', '\u065e', '\u06d6', '\u06d7', '\u06d8',
+}
+
+func (r Renderer) imageCellSize(path string) (int, int, string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return 0, 0, "", err
+	}
+	defer file.Close()
+
+	cfg, format, err := image.DecodeConfig(file)
+	if err != nil {
+		return 0, 0, "", err
+	}
+	cols := clamp(r.Width-7, 16, 72)
+	if cfg.Width > 0 && cfg.Width < cols {
+		cols = max(1, cfg.Width)
+	}
+	rows := 8
+	if cfg.Width > 0 && cfg.Height > 0 {
+		rows = clamp((cfg.Height*cols)/(cfg.Width*2), 1, 18)
+	}
+	return cols, rows, format, nil
 }
 
 func (r Renderer) rule() string {
@@ -530,7 +686,10 @@ func sticks(text string) bool {
 func terminalImageProtocol() string {
 	term := strings.ToLower(os.Getenv("TERM"))
 	program := strings.ToLower(os.Getenv("TERM_PROGRAM"))
-	if strings.Contains(term, "kitty") {
+	if strings.Contains(term, "ghostty") || strings.Contains(program, "ghostty") {
+		return "ghostty"
+	}
+	if strings.Contains(term, "kitty") || os.Getenv("KITTY_WINDOW_ID") != "" {
 		return "kitty"
 	}
 	if strings.Contains(program, "iterm") {
@@ -542,14 +701,46 @@ func terminalImageProtocol() string {
 	return ""
 }
 
-func localFileExists(path string) bool {
-	if path == "" || strings.Contains(path, "://") {
-		return false
+func supportsKittyGraphics(protocol string) bool {
+	return protocol == "kitty" || protocol == "ghostty"
+}
+
+func (r Renderer) localImagePath(target string) (string, bool) {
+	path, ok := localFileTarget(r.SourcePath, target)
+	if !ok {
+		return "", false
 	}
-	if _, err := os.Stat(filepath.Clean(path)); err == nil {
-		return true
+	stat, err := os.Stat(path)
+	if err != nil || !stat.Mode().IsRegular() {
+		return "", false
 	}
-	return false
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path, true
+	}
+	return abs, true
+}
+
+func localFileTarget(sourcePath string, target string) (string, bool) {
+	if target == "" || isExternalTarget(target) || strings.HasPrefix(target, "#") {
+		return "", false
+	}
+	path := strings.SplitN(target, "#", 2)[0]
+	if path == "" {
+		return "", false
+	}
+	path = filepath.Clean(path)
+	if !filepath.IsAbs(path) && sourcePath != "" {
+		path = filepath.Join(filepath.Dir(sourcePath), path)
+	}
+	return path, true
+}
+
+func isExternalTarget(target string) bool {
+	lower := strings.ToLower(target)
+	return strings.Contains(lower, "://") ||
+		strings.HasPrefix(lower, "mailto:") ||
+		strings.HasPrefix(lower, "tel:")
 }
 
 func min(a, b int) int {

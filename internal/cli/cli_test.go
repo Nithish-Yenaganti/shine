@@ -21,6 +21,17 @@ func TestRootCommandExposesExpectedFlagsAndCompletions(t *testing.T) {
 	}
 }
 
+func TestDefaultThemeIsMono(t *testing.T) {
+	cmd := rootCommand()
+	flag := cmd.Flags().Lookup("theme")
+	if flag == nil {
+		t.Fatal("missing theme flag")
+	}
+	if flag.DefValue != "mono" {
+		t.Fatalf("theme default = %q, want mono", flag.DefValue)
+	}
+}
+
 func TestVersionCommand(t *testing.T) {
 	cmd := rootCommand()
 	var out bytes.Buffer

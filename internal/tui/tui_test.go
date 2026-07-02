@@ -32,6 +32,31 @@ func TestBackgroundScreenDoesNotPadRows(t *testing.T) {
 	}
 }
 
+func TestContentWidthAccountsForHorizontalPadding(t *testing.T) {
+	tests := []struct {
+		width int
+		want  int
+	}{
+		{60, 58},
+		{88, 84},
+		{140, 132},
+	}
+	for _, tt := range tests {
+		m := model{width: tt.width}
+		if got := m.contentWidth(); got != tt.want {
+			t.Fatalf("contentWidth(%d) = %d, want %d", tt.width, got, tt.want)
+		}
+	}
+}
+
+func TestPaddedBodyAddsHorizontalMargin(t *testing.T) {
+	m := model{width: 88}
+	got := m.paddedBody("one\ntwo")
+	if got != "  one\n  two" {
+		t.Fatalf("unexpected padded body: %q", got)
+	}
+}
+
 func TestStatusLineUsesCachedTotalLines(t *testing.T) {
 	m := model{
 		theme:      config.ThemeByName("mono"),
@@ -145,6 +170,22 @@ func TestDebugKeysShowsLastKey(t *testing.T) {
 	m = updateKey(t, m, "j")
 	if !strings.Contains(m.statusLine(), "key:j") {
 		t.Fatalf("expected status line to show last key, got %q", m.statusLine())
+	}
+}
+
+func TestSearchHighlightSkipsImageProtocolLines(t *testing.T) {
+	imageLine := "\x1b_Ga=T,q=2;payload\x1b\\\x1b[38;5;42m\U0010eeee\u0305\u0305\x1b[39m"
+	m := model{
+		theme:   config.ThemeByName("mono"),
+		content: "title\n" + imageLine + "\nlogo.png",
+	}
+
+	got := m.highlightedContent("payload")
+	if !strings.Contains(got, imageLine) {
+		t.Fatalf("image protocol line should remain unchanged:\n%q", got)
+	}
+	if strings.Contains(got, "\x1b[48;5") || strings.Contains(got, "#1f2328") {
+		t.Fatalf("highlight style should not be applied to image protocol line:\n%q", got)
 	}
 }
 

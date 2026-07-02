@@ -1,9 +1,19 @@
 package render
 
 import (
+	"encoding/base64"
+	"image"
+	"image/color"
+	"image/jpeg"
+	"image/png"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/Nithish-Yenaganti/shine/internal/config"
@@ -127,5 +137,295 @@ func TestInlineRelativePathKeepsSpace(t *testing.T) {
 	}
 	if !strings.Contains(out, "go test ./...") || !strings.Contains(out, "go build ./cmd/shine") {
 		t.Fatalf("missing spaced relative path commands:\n%s", out)
+	}
+}
+
+func TestLocalImagePathResolvesRelativeToSourcePath(t *testing.T) {
+	dir := t.TempDir()
+	docsDir := filepath.Join(dir, "docs")
+	assetsDir := filepath.Join(docsDir, "assets")
+	if err := os.MkdirAll(assetsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	imagePath := filepath.Join(assetsDir, "logo.png")
+	writeTestPNG(t, imagePath)
+
+	got, ok := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(docsDir, "README.md")).
+		localImagePath("assets/logo.png")
+	if !ok {
+		t.Fatalf("expected image path to resolve")
+	}
+	if got != imagePath {
+		t.Fatalf("resolved path = %q, want %q", got, imagePath)
+	}
+}
+
+func TestKittyImageRenderingEmitsGraphicsEscape(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	t.Setenv("TERM_PROGRAM", "")
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "logo.png")
+	writeTestPNG(t, imagePath)
+	doc, err := parser.Parse([]byte("![Logo](logo.png)\n"), filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(dir, "README.md")).
+		WithImages(true).
+		Render(doc)
+
+	if !strings.Contains(out, "\x1b_Ga=T,q=2,f=100,t=f,U=1,i=") {
+		t.Fatalf("missing kitty virtual placement escape:\n%q", out)
+	}
+	if !strings.Contains(out, base64.StdEncoding.EncodeToString([]byte(imagePath))) {
+		t.Fatalf("kitty escape does not include encoded image path:\n%q", out)
+	}
+	if !strings.Contains(out, "\U0010eeee") {
+		t.Fatalf("kitty output does not include unicode placeholder cells:\n%q", out)
+	}
+	if !strings.Contains(out, "\U0010eeee\u0305\u0305") || !strings.Contains(out, "\U0010eeee\u0305\u030d") {
+		t.Fatalf("kitty placeholders should encode row and column diacritics:\n%q", out)
+	}
+	assertPlaceholderColorMatchesImageID(t, out)
+	if strings.Contains(out, "image preview unavailable") || strings.Contains(out, "kitty image preview disabled") {
+		t.Fatalf("expected real image rendering, got fallback:\n%q", out)
+	}
+}
+
+func TestGhosttyUsesKittyGraphicsProtocol(t *testing.T) {
+	t.Setenv("TERM", "xterm-ghostty")
+	t.Setenv("TERM_PROGRAM", "ghostty")
+	if got := terminalImageProtocol(); got != "ghostty" {
+		t.Fatalf("expected ghostty protocol, got %q", got)
+	}
+}
+
+func TestGhosttyImageRenderingUsesUnicodePlaceholderPlacement(t *testing.T) {
+	t.Setenv("TERM", "xterm-ghostty")
+	t.Setenv("TERM_PROGRAM", "ghostty")
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "logo.png")
+	writeTestPNG(t, imagePath)
+	doc, err := parser.Parse([]byte("![Logo](logo.png)\n"), filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(dir, "README.md")).
+		WithImages(true).
+		Render(doc)
+
+	if !strings.Contains(out, "\x1b_Ga=T,q=2,f=100,t=f,U=1,i=") {
+		t.Fatalf("missing virtual kitty graphics escape for ghostty:\n%q", out)
+	}
+	if !strings.Contains(out, "\U0010eeee\u0305\u0305") {
+		t.Fatalf("ghostty should use unicode placeholders so images scroll with the viewport:\n%q", out)
+	}
+	assertPlaceholderColorMatchesImageID(t, out)
+	if strings.Contains(out, "image preview unavailable") || strings.Contains(out, "image preview failed") {
+		t.Fatalf("expected ghostty image rendering, got fallback:\n%q", out)
+	}
+}
+
+func TestKittyImageRenderingSupportsDecodedLocalImages(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	t.Setenv("TERM_PROGRAM", "")
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "photo.jpg")
+	writeTestJPEG(t, imagePath)
+	doc, err := parser.Parse([]byte("![Photo](photo.jpg)\n"), filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(dir, "README.md")).
+		WithImages(true).
+		Render(doc)
+
+	if !strings.Contains(out, "\x1b_Ga=T,q=2,f=100,U=1,i=") {
+		t.Fatalf("missing kitty graphics payload escape:\n%q", out)
+	}
+	if strings.Contains(out, "t=f") {
+		t.Fatalf("decoded non-PNG image should use direct payload transfer, got file transfer:\n%q", out)
+	}
+	if strings.Contains(out, "image preview unavailable") || strings.Contains(out, "image preview failed") {
+		t.Fatalf("expected decoded image rendering, got fallback:\n%q", out)
+	}
+}
+
+func TestKittyPlaceholderSurvivesViewportRendering(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	t.Setenv("TERM_PROGRAM", "")
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "logo.png")
+	writeTestPNG(t, imagePath)
+	doc, err := parser.Parse([]byte("![Logo](logo.png)\n"), filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(dir, "README.md")).
+		WithImages(true).
+		Render(doc)
+
+	vp := viewport.New(48, 8)
+	vp.SetContent(out)
+	view := vp.View()
+	if !strings.Contains(view, "\U0010eeee") {
+		t.Fatalf("viewport stripped kitty placeholder cells:\n%q", view)
+	}
+	if !strings.Contains(view, "\U0010eeee\u0305\u0305") {
+		t.Fatalf("viewport stripped kitty row/column diacritics:\n%q", view)
+	}
+	if !strings.Contains(view, "\x1b_G") {
+		t.Fatalf("viewport stripped kitty image transmission escape:\n%q", view)
+	}
+}
+
+func TestImageRenderingFallsBackWhenDisabled(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	t.Setenv("TERM_PROGRAM", "")
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "logo.png")
+	writeTestPNG(t, imagePath)
+	doc, err := parser.Parse([]byte("![Logo](logo.png)\n"), filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(dir, "README.md")).
+		Render(doc)
+
+	if strings.Contains(out, "\x1b_G") {
+		t.Fatalf("default renderer should not emit kitty graphics escapes:\n%q", out)
+	}
+	if !strings.Contains(out, "kitty image preview disabled in text output") {
+		t.Fatalf("missing disabled fallback message:\n%s", out)
+	}
+}
+
+func TestImageRenderingFallsBackInUnsupportedTerminal(t *testing.T) {
+	t.Setenv("TERM", "xterm-256color")
+	t.Setenv("TERM_PROGRAM", "")
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "logo.png")
+	writeTestPNG(t, imagePath)
+	doc, err := parser.Parse([]byte("![Logo](logo.png)\n"), filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(dir, "README.md")).
+		WithImages(true).
+		Render(doc)
+
+	if strings.Contains(out, "\x1b_G") {
+		t.Fatalf("unsupported terminal should not emit kitty graphics escapes:\n%q", out)
+	}
+	if !strings.Contains(out, "image preview requires kitty-compatible graphics") {
+		t.Fatalf("missing unsupported terminal fallback:\n%s", out)
+	}
+}
+
+func TestKittyImageIDUsesFullHashRange(t *testing.T) {
+	idA := kittyImageID("/tmp/a.png")
+	idB := kittyImageID("/tmp/b.png")
+	if idA == idB {
+		t.Fatalf("expected different paths to produce different ids")
+	}
+	if idA <= 255 || idB <= 255 {
+		t.Fatalf("expected image ids to use more than an 8-bit color range, got %d and %d", idA, idB)
+	}
+	if idA > 0x00ffffff || idB > 0x00ffffff {
+		t.Fatalf("expected image ids to fit in truecolor placeholder range, got %d and %d", idA, idB)
+	}
+}
+
+func TestImageRenderingFallsBackForRemoteAndMissingImages(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	doc, err := parser.Parse([]byte("![Remote](https://example.com/logo.png)\n\n![Missing](missing.png)\n"), "README.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath("README.md").
+		WithImages(true).
+		Render(doc)
+
+	if strings.Contains(out, "\x1b_G") {
+		t.Fatalf("remote or missing images should not emit kitty graphics escapes:\n%q", out)
+	}
+	if !strings.Contains(out, "image preview unavailable for remote images") {
+		t.Fatalf("missing remote image fallback:\n%s", out)
+	}
+	if !strings.Contains(out, "local image file not found") {
+		t.Fatalf("missing local missing-image fallback:\n%s", out)
+	}
+}
+
+func writeTestPNG(t *testing.T, path string) {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, 4, 2))
+	for y := 0; y < 2; y++ {
+		for x := 0; x < 4; x++ {
+			img.Set(x, y, color.RGBA{R: 220, G: 80, B: 40, A: 255})
+		}
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if err := png.Encode(file, img); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func assertPlaceholderColorMatchesImageID(t *testing.T, out string) {
+	t.Helper()
+	idMatch := regexp.MustCompile(`i=(\d+)`).FindStringSubmatch(out)
+	if len(idMatch) != 2 {
+		t.Fatalf("missing image id in output:\n%q", out)
+	}
+	id, err := strconv.Atoi(idMatch[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	colorMatch := regexp.MustCompile(`\x1b\[38;2;(\d+);(\d+);(\d+)m`).FindStringSubmatch(out)
+	if len(colorMatch) != 4 {
+		t.Fatalf("missing truecolor placeholder foreground:\n%q", out)
+	}
+	red, _ := strconv.Atoi(colorMatch[1])
+	green, _ := strconv.Atoi(colorMatch[2])
+	blue, _ := strconv.Atoi(colorMatch[3])
+	got := red<<16 | green<<8 | blue
+	if got != id {
+		t.Fatalf("placeholder color encodes image id %d, want %d", got, id)
+	}
+}
+
+func writeTestJPEG(t *testing.T, path string) {
+	t.Helper()
+	img := image.NewRGBA(image.Rect(0, 0, 4, 2))
+	for y := 0; y < 2; y++ {
+		for x := 0; x < 4; x++ {
+			img.Set(x, y, color.RGBA{R: 80, G: 120, B: 220, A: 255})
+		}
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if err := jpeg.Encode(file, img, nil); err != nil {
+		t.Fatal(err)
 	}
 }

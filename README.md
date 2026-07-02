@@ -13,8 +13,9 @@ Markdown is easy to write but awkward to review raw inside terminal-first workfl
 ## Features
 
 - Markdown files and stdin
-- TUI preview with scrolling, search, heading outline, help panel, and theme picker
-- Tables, callouts, task lists, nested lists, quotes, links, inline styles, code blocks, and image placeholders
+- TUI preview with scrolling, search, heading outline, help panel, theme picker, and terminal-width padding
+- Tables, callouts, task lists, nested lists, quotes, links, inline styles, code blocks, and local image previews in Kitty/Ghostty-compatible terminals
+- Text image placeholders for unsupported terminals, remote images, missing files, and non-interactive output
 - Docs checks for heading structure, duplicate headings, image alt text, local links/images, and long table cells
 - Live reload with `--watch`
 - Responsive scrolling for larger Markdown files
@@ -84,6 +85,12 @@ bin/shine --outline README.md
 bin/shine --check README.md
 ```
 
+## Image Previews
+
+In the interactive TUI, local Markdown images render inline when the terminal supports Kitty-compatible graphics. This currently targets Kitty and Ghostty. Image paths are resolved relative to the Markdown file, so `![Logo](fixtures/LOGO.png)` works from `README.md`.
+
+`--print`, `--plain`, unsupported terminals, remote images, and missing files keep a text placeholder instead of emitting graphics escapes. macOS Terminal.app does not support this image path; use Ghostty or Kitty for inline images.
+
 ## Docs Review
 
 Use `--check` before publishing README files, changelogs, release notes, or docs pages:
@@ -141,7 +148,7 @@ h/H/F1     show help panel
 
 ## Themes
 
-`tomorrow-night` is the default. Press `t` in the TUI to change themes.
+`mono` is the default. Press `t` in the TUI to change themes.
 
 Available themes:
 

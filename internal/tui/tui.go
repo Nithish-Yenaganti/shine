@@ -67,7 +67,10 @@ func Run(opts Options) error {
 	input.Prompt = "/"
 	input.CharLimit = 128
 
-	content := render.New(88, opts.Theme).Render(doc)
+	content := render.New(88, opts.Theme).
+		WithSourcePath(opts.Source.Path).
+		WithImages(true).
+		Render(doc)
 	m := model{
 		source:     opts.Source,
 		theme:      opts.Theme,
@@ -110,7 +113,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.viewport.Width = msg.Width
+		m.viewport.Width = m.contentWidth()
 		m.viewport.Height = max(1, msg.Height-1)
 		m.reloadRender()
 	case fileChanged:
@@ -197,14 +200,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	body := m.viewport.View()
+	body := m.paddedBody(m.viewport.View())
 	if m.themeMenu {
 		body = m.centeredView(m.themeMenuView())
 	} else if m.outline {
-		body = m.outlineView() + "\n\n" + body
+		body = m.paddedBody(m.outlineView()) + "\n\n" + body
 	}
 	if m.help {
-		body = m.helpView() + "\n\n" + body
+		body = m.paddedBody(m.helpView()) + "\n\n" + body
 	}
 	status := m.statusLine()
 	if m.searching {
@@ -256,11 +259,11 @@ func (m *model) reloadRender() {
 		m.err = err
 		return
 	}
-	width := m.width
-	if width == 0 {
-		width = 88
-	}
-	m.content = render.New(width, m.theme).Render(doc)
+	m.viewport.Width = m.contentWidth()
+	m.content = render.New(m.contentWidth(), m.theme).
+		WithSourcePath(m.source.Path).
+		WithImages(true).
+		Render(doc)
 	m.totalLines = lineCount(m.content)
 	m.headings = doc.Headings
 	m.applySearch()
@@ -445,9 +448,48 @@ func (m model) highlightedContent(query string) string {
 		Background(lipgloss.Color(m.theme.MatchHighlight)).
 		Foreground(lipgloss.Color("#1f2328"))
 	for i, line := range lines {
+		if isImageProtocolLine(line) {
+			continue
+		}
 		if strings.Contains(strings.ToLower(line), query) {
 			lines[i] = style.Render(line)
 		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+func isImageProtocolLine(line string) bool {
+	return strings.Contains(line, "\x1b_G") || strings.Contains(line, "\U0010eeee")
+}
+
+func (m model) contentWidth() int {
+	width := m.width
+	if width == 0 {
+		width = 88
+	}
+	return max(32, width-2*m.horizontalPadding())
+}
+
+func (m model) horizontalPadding() int {
+	width := m.width
+	if width < 72 {
+		return 1
+	}
+	if width < 120 {
+		return 2
+	}
+	return 4
+}
+
+func (m model) paddedBody(body string) string {
+	padding := m.horizontalPadding()
+	if padding == 0 || body == "" {
+		return body
+	}
+	prefix := strings.Repeat(" ", padding)
+	lines := strings.Split(body, "\n")
+	for i, line := range lines {
+		lines[i] = prefix + line
 	}
 	return strings.Join(lines, "\n")
 }
