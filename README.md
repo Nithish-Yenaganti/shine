@@ -89,7 +89,9 @@ bin/shine --check README.md
 
 In the interactive TUI, local Markdown images render inline when the terminal supports Kitty-compatible graphics. This currently targets Kitty and Ghostty. Image paths are resolved relative to the Markdown file, so `![Logo](fixtures/LOGO.png)` works from `README.md`.
 
-`--print`, `--plain`, unsupported terminals, remote images, and missing files keep a text placeholder instead of emitting graphics escapes. macOS Terminal.app does not support this image path; use Ghostty or Kitty for inline images.
+Note: inline image rendering only works in terminals with Kitty-compatible image support, such as Kitty and Ghostty. It does not work in Apple's default macOS Terminal.app.
+
+`--print`, `--plain`, unsupported terminals, remote images, and missing files keep a text placeholder instead of emitting graphics escapes.
 
 ## Docs Review
 
