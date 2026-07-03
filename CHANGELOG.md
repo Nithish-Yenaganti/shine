@@ -2,6 +2,13 @@
 
 All notable changes to `shine` will be documented in this file.
 
+## 0.1.1 - 2026-07-03
+
+### Changed
+
+- Added an npm-specific README publishing flow.
+- Simplified the GitHub README for a shorter project overview.
+
 ## 0.1.0 - 2026-07-01
 
 ### Added

@@ -6,7 +6,7 @@
 
 Preview Markdown without leaving the terminal, then run quick checks for common publishing issues before your docs land.
 
-Current version: `0.1.0`.
+Current version: `0.1.1`.
 
 ## Features
 
@@ -134,8 +134,8 @@ goreleaser release --snapshot --clean
 Publish:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 npm run publish:npm -- --access public
 ```
 
