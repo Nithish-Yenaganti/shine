@@ -140,6 +140,80 @@ func TestInlineRelativePathKeepsSpace(t *testing.T) {
 	}
 }
 
+func TestMermaidFallsBackWhenImagesDisabled(t *testing.T) {
+	doc, err := parser.Parse([]byte("```mermaid\ngraph TD\n  A --> B\n```\n"), "test.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).Render(doc)
+
+	if !strings.Contains(out, "┌ mermaid") || !strings.Contains(out, "A --> B") {
+		t.Fatalf("expected mermaid source code fallback:\n%s", out)
+	}
+	if !strings.Contains(out, "mermaid  preview disabled in text output") {
+		t.Fatalf("missing disabled mermaid fallback note:\n%s", out)
+	}
+	if strings.Contains(out, "\x1b_G") {
+		t.Fatalf("disabled mermaid preview should not emit image escapes:\n%q", out)
+	}
+}
+
+func TestMermaidFallsBackWhenCommandMissing(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	t.Setenv("TERM_PROGRAM", "")
+	doc, err := parser.Parse([]byte("```mermaid\ngraph TD\n  A --> B\n```\n"), "test.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithImages(true).
+		WithMermaidCommand(filepath.Join(t.TempDir(), "missing-mmdc")).
+		Render(doc)
+
+	if !strings.Contains(out, "preview requires Mermaid CLI (mmdc)") {
+		t.Fatalf("missing mermaid CLI fallback note:\n%s", out)
+	}
+	if !strings.Contains(out, "A --> B") {
+		t.Fatalf("expected mermaid source to remain visible:\n%s", out)
+	}
+}
+
+func TestMermaidRendersCachedImageWithKittyGraphics(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	t.Setenv("TERM_PROGRAM", "")
+	dir := t.TempDir()
+	cacheDir := filepath.Join(dir, "cache")
+	imagePath := filepath.Join(dir, "rendered.png")
+	writeTestPNG(t, imagePath)
+	command := fakeMermaidCommand(t, imagePath)
+	doc, err := parser.Parse([]byte("```mermaid\ngraph TD\n  A --> B\n```\n"), "test.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithImages(true).
+		WithMermaidCommand(command).
+		WithMermaidCache(cacheDir).
+		Render(doc)
+
+	if !strings.Contains(out, "diagram") || !strings.Contains(out, "Mermaid") {
+		t.Fatalf("missing mermaid diagram label:\n%q", out)
+	}
+	if !strings.Contains(out, "\x1b_Ga=T,q=2,f=100,t=f,U=1,i=") {
+		t.Fatalf("missing kitty image escape for rendered mermaid:\n%q", out)
+	}
+	if strings.Contains(out, "A --> B") || strings.Contains(out, "preview failed") {
+		t.Fatalf("successful mermaid render should not show source fallback:\n%q", out)
+	}
+	cached := filepath.Join(cacheDir, mermaidCacheKey("graph TD\n  A --> B")+".png")
+	if _, err := os.Stat(cached); err != nil {
+		t.Fatalf("expected cached mermaid image at %s: %v", cached, err)
+	}
+}
+
 func TestLocalImagePathResolvesRelativeToSourcePath(t *testing.T) {
 	dir := t.TempDir()
 	docsDir := filepath.Join(dir, "docs")
@@ -428,4 +502,25 @@ func writeTestJPEG(t *testing.T, path string) {
 	if err := jpeg.Encode(file, img, nil); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func fakeMermaidCommand(t *testing.T, renderedImage string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "mmdc")
+	script := `#!/bin/sh
+out=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    shift
+    out="$1"
+  fi
+  shift
+done
+cp "$SHINE_TEST_MERMAID_IMAGE" "$out"
+`
+	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("SHINE_TEST_MERMAID_IMAGE", renderedImage)
+	return path
 }

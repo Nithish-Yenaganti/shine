@@ -2,6 +2,12 @@
 
 All notable changes to `shine` will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Added optional Mermaid diagram previews through Mermaid CLI (`mmdc`) with cached image output and code fallback.
+
 ## 0.1.1 - 2026-07-03
 
 ### Changed

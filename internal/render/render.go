@@ -2,7 +2,10 @@ package render
 
 import (
 	"bytes"
+	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"hash/fnv"
 	"image"
@@ -10,9 +13,11 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/chroma/v2/formatters"
 	"github.com/alecthomas/chroma/v2/lexers"
@@ -24,10 +29,12 @@ import (
 )
 
 type Renderer struct {
-	Width        int
-	Theme        config.Theme
-	SourcePath   string
-	RenderImages bool
+	Width          int
+	Theme          config.Theme
+	SourcePath     string
+	RenderImages   bool
+	MermaidCommand string
+	MermaidCache   string
 }
 
 type richWord struct {
@@ -49,6 +56,16 @@ func (r Renderer) WithSourcePath(path string) Renderer {
 
 func (r Renderer) WithImages(enabled bool) Renderer {
 	r.RenderImages = enabled
+	return r
+}
+
+func (r Renderer) WithMermaidCommand(command string) Renderer {
+	r.MermaidCommand = command
+	return r
+}
+
+func (r Renderer) WithMermaidCache(path string) Renderer {
+	r.MermaidCache = path
 	return r
 }
 
@@ -271,6 +288,17 @@ func (r Renderer) code(block model.Block) string {
 	if label == "" {
 		label = "text"
 	}
+	if isMermaidLanguage(label) {
+		return r.mermaid(block)
+	}
+	return r.codeBlock(block)
+}
+
+func (r Renderer) codeBlock(block model.Block) string {
+	label := block.Language
+	if label == "" {
+		label = "text"
+	}
 	codeLines := r.codeLines(block.Code, label)
 	numberWidth := len(strconv.Itoa(len(codeLines)))
 	contentWidth := max(18, r.Width-2)
@@ -291,6 +319,100 @@ func (r Renderer) code(block model.Block) string {
 	}
 	lines = append(lines, r.borderStyle().Render("└"+strings.Repeat("─", max(1, r.Width-1))))
 	return strings.Join(lines, "\n")
+}
+
+func (r Renderer) codeFallback(block model.Block, note string) string {
+	out := r.codeBlock(block)
+	if note == "" {
+		return out
+	}
+	return out + "\n" + r.mutedStyle().Render("mermaid  "+note)
+}
+
+func (r Renderer) mermaid(block model.Block) string {
+	protocol := terminalImageProtocol()
+	if !r.RenderImages {
+		return r.codeFallback(block, "preview disabled in text output")
+	}
+	if !supportsKittyGraphics(protocol) {
+		return r.codeFallback(block, "preview requires kitty-compatible graphics")
+	}
+	path, err := r.mermaidImage(block.Code)
+	if err != nil {
+		return r.codeFallback(block, err.Error())
+	}
+	preview, err := r.kittyImage(path)
+	if err != nil {
+		return r.codeFallback(block, "preview failed")
+	}
+	return strings.Join([]string{
+		r.mutedStyle().Render("diagram  ") + r.bodyStyle().Bold(true).Render("Mermaid"),
+		preview,
+	}, "\n")
+}
+
+func (r Renderer) mermaidImage(code string) (string, error) {
+	command := r.mermaidCommand()
+	if _, err := exec.LookPath(command); err != nil {
+		return "", fmt.Errorf("preview requires Mermaid CLI (mmdc)")
+	}
+	cacheDir, err := r.mermaidCacheDir()
+	if err != nil {
+		return "", fmt.Errorf("preview failed")
+	}
+	key := mermaidCacheKey(code)
+	inputPath := filepath.Join(cacheDir, key+".mmd")
+	outputPath := filepath.Join(cacheDir, key+".png")
+	if stat, err := os.Stat(outputPath); err == nil && stat.Mode().IsRegular() {
+		return outputPath, nil
+	}
+	if err := os.WriteFile(inputPath, []byte(code), 0o600); err != nil {
+		return "", fmt.Errorf("preview failed")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, command, "-i", inputPath, "-o", outputPath)
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("preview failed")
+	}
+	if stat, err := os.Stat(outputPath); err != nil || !stat.Mode().IsRegular() {
+		return "", fmt.Errorf("preview failed")
+	}
+	return outputPath, nil
+}
+
+func (r Renderer) mermaidCommand() string {
+	if r.MermaidCommand != "" {
+		return r.MermaidCommand
+	}
+	if command := os.Getenv("SHINE_MERMAID_CMD"); command != "" {
+		return command
+	}
+	return "mmdc"
+}
+
+func (r Renderer) mermaidCacheDir() (string, error) {
+	dir := r.MermaidCache
+	if dir == "" {
+		base, err := os.UserCacheDir()
+		if err != nil || base == "" {
+			base = os.TempDir()
+		}
+		dir = filepath.Join(base, "shine", "mermaid")
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
+	}
+	return dir, nil
+}
+
+func mermaidCacheKey(code string) string {
+	sum := sha256.Sum256([]byte(code))
+	return hex.EncodeToString(sum[:])
+}
+
+func isMermaidLanguage(language string) bool {
+	return strings.EqualFold(strings.TrimSpace(language), "mermaid")
 }
 
 func (r Renderer) showCodeLineNumbers(language string) bool {

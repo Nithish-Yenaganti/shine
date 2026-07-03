@@ -13,12 +13,15 @@ shine README.md
 - checks README, changelog, and release-note files before publishing
 - supports `--print`, `--plain`, `--outline`, and `--check`
 - includes themes, search, scrolling, outline view, and live reload
+- optionally renders Mermaid diagrams when Mermaid CLI (`mmdc`) is installed
 
 ## Image Support
 
 Inline image previews work only in Kitty-compatible terminals, currently Kitty and Ghostty.
 
 Apple's default macOS Terminal.app and unsupported terminals show text placeholders instead. `--print`, `--plain`, remote images, and missing files also use placeholders.
+
+Mermaid diagrams use the same image path. If `mmdc` is unavailable, Mermaid blocks remain visible as code.
 
 ## Commands
 

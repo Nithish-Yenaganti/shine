@@ -14,6 +14,7 @@ Current version: `0.1.1`.
 - TUI preview with scrolling, search, outline, help, and themes
 - Tables, callouts, task lists, code blocks, links, and inline styles
 - Local image previews in Kitty/Ghostty-compatible terminals
+- Optional Mermaid previews through Mermaid CLI (`mmdc`)
 - Docs checks for headings, duplicate titles, image alt text, links, images, and table readability
 - Non-interactive commands: `--print`, `--plain`, `--outline`, `--check`
 - Shell completions for bash, zsh, fish, and PowerShell
@@ -51,6 +52,8 @@ shine --check README.md
 Local images render inline in the interactive TUI on Kitty-compatible terminals, currently Kitty and Ghostty. Image paths resolve relative to the Markdown file, so `![Logo](fixtures/LOGO.png)` works from `README.md`.
 
 Unsupported terminals, including Apple's default macOS Terminal.app, show a text placeholder instead. `--print`, `--plain`, remote images, and missing files also use placeholders.
+
+Mermaid code blocks can render as inline diagrams when `mmdc` from Mermaid CLI is installed. Without `mmdc`, or outside supported image terminals, Mermaid blocks stay readable as code with a short fallback note.
 
 ## Docs Review
 
