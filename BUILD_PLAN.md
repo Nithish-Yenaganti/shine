@@ -36,7 +36,7 @@ fsnotify        live reload
 - Make `--check` useful for README, changelog, and release-note review by catching publishing mistakes before docs land.
 - Use Bubble Tea for interactive TUI behavior.
 - Use Lip Gloss for visual presentation.
-- Keep the interactive TUI readable with right-side terminal padding while leaving non-interactive output unpadded.
+- Keep the interactive TUI readable with left/right terminal padding while leaving non-interactive output unpadded.
 - Use Bubbles where useful for viewport and search input.
 - Verify locally against `README.md` and `fixtures/basic.md`.
 

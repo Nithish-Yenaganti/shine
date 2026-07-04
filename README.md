@@ -11,7 +11,7 @@ Current version: `0.1.1`.
 ## Features
 
 - Markdown files, stdin, and non-interactive output
-- TUI preview with scrolling, search, outline, help, and themes
+- TUI preview with scrolling, search, outline, help, themes, and left/right padding
 - Tables, callouts, task lists, code blocks, links, and inline styles
 - Local image previews in Kitty/Ghostty-compatible terminals
 - Optional Mermaid previews through Mermaid CLI (`mmdc`)

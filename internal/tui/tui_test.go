@@ -32,14 +32,14 @@ func TestBackgroundScreenDoesNotPadRows(t *testing.T) {
 	}
 }
 
-func TestContentWidthReservesRightPadding(t *testing.T) {
+func TestContentWidthReservesLeftAndRightPadding(t *testing.T) {
 	tests := []struct {
 		width int
 		want  int
 	}{
-		{60, 58},
-		{88, 68},
-		{140, 120},
+		{60, 57},
+		{88, 53},
+		{140, 105},
 	}
 	for _, tt := range tests {
 		m := model{width: tt.width}
@@ -49,10 +49,11 @@ func TestContentWidthReservesRightPadding(t *testing.T) {
 	}
 }
 
-func TestPaddedBodyDoesNotAddLeftPadding(t *testing.T) {
+func TestPaddedBodyAddsLeftPadding(t *testing.T) {
 	m := model{width: 88}
 	got := m.paddedBody("one\ntwo")
-	if got != "one\ntwo" {
+	prefix := strings.Repeat(" ", 15)
+	if got != prefix+"one\n"+prefix+"two" {
 		t.Fatalf("unexpected padded body: %q", got)
 	}
 }

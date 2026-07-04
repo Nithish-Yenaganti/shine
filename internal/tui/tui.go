@@ -463,7 +463,7 @@ func isImageProtocolLine(line string) bool {
 }
 
 func (m model) contentWidth() int {
-	return max(32, m.terminalWidth()-m.rightPadding())
+	return max(32, m.terminalWidth()-m.leftPadding()-m.rightPadding())
 }
 
 func (m model) terminalWidth() int {
@@ -480,8 +480,23 @@ func (m model) rightPadding() int {
 	return 20
 }
 
+func (m model) leftPadding() int {
+	if m.terminalWidth() < 72 {
+		return 1
+	}
+	return 15
+}
+
 func (m model) paddedBody(body string) string {
-	return body
+	if body == "" {
+		return body
+	}
+	prefix := strings.Repeat(" ", m.leftPadding())
+	lines := strings.Split(body, "\n")
+	for i, line := range lines {
+		lines[i] = prefix + line
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (m model) panelStyle() lipgloss.Style {
