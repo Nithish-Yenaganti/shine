@@ -33,6 +33,7 @@ type model struct {
 	theme      config.Theme
 	watch      bool
 	viewport   viewport.Model
+	viewCache  *viewportBodyCache
 	search     textinput.Model
 	searching  bool
 	outline    bool
@@ -42,6 +43,8 @@ type model struct {
 	width      int
 	height     int
 	content    string
+	contentRev uint64
+	hasImages  bool
 	totalLines int
 	headings   []shinemodel.HeadingRef
 	matches    []int
@@ -50,6 +53,26 @@ type model struct {
 	err        error
 	debugKeys  bool
 	lastKey    string
+}
+
+type viewportBodyCache struct {
+	key    viewportBodyCacheKey
+	body   string
+	valid  bool
+	hits   int
+	builds int
+}
+
+type viewportBodyCacheKey struct {
+	contentRev    uint64
+	yOffset       int
+	viewportWidth int
+	viewportLines int
+	terminalWidth int
+	leftPadding   int
+	rightPadding  int
+	themeName     string
+	searchQuery   string
 }
 
 type fileChanged struct{}
@@ -80,6 +103,7 @@ func Run(opts Options) error {
 		theme:      opts.Theme,
 		watch:      opts.Watch,
 		viewport:   newViewport(contentWidth, initialHeight),
+		viewCache:  &viewportBodyCache{},
 		search:     input,
 		help:       opts.ShowKeys,
 		themeIndex: themeIndex(opts.Theme.Name),
@@ -87,6 +111,8 @@ func Run(opts Options) error {
 		width:      initialWidth,
 		height:     initialHeight,
 		content:    content,
+		contentRev: 1,
+		hasImages:  hasImageProtocolLines(content),
 		totalLines: lineCount(content),
 		status:     "shine",
 	}
@@ -104,7 +130,7 @@ func Run(opts Options) error {
 }
 
 func (m model) Init() tea.Cmd {
-	m.viewport.SetContent(m.content)
+	m.setViewportContent(m.content)
 	var cmds []tea.Cmd
 	if m.theme.Background != "" {
 		cmds = append(cmds, tea.Sequence(terminalBackgroundCmd(m.theme.Background), tea.ClearScreen))
@@ -122,6 +148,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		m.viewport.Width = m.contentWidth()
 		m.viewport.Height = max(1, msg.Height-1)
+		m.invalidateViewportBodyCache()
 		m.reloadRender()
 	case fileChanged:
 		m.reloadFile()
@@ -130,6 +157,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case watchFailed:
 		m.err = msg.err
+	case tea.MouseMsg:
+		return m.updateMouse(msg)
 	case tea.KeyMsg:
 		m.lastKey = keyLabel(msg)
 		if m.themeMenu {
@@ -139,11 +168,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "enter":
 				m.searching = false
+				m.invalidateViewportBodyCache()
 				m.applySearch()
 				return m, nil
 			case "esc":
 				m.searching = false
 				m.search.SetValue("")
+				m.invalidateViewportBodyCache()
 				return m, nil
 			}
 			var cmd tea.Cmd
@@ -152,10 +183,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if opensHelp(msg) {
 			m.help = true
+			m.invalidateViewportBodyCache()
 			return m, nil
 		}
 		if togglesHelp(msg) {
 			m.help = !m.help
+			m.invalidateViewportBodyCache()
 			return m, nil
 		}
 		switch msg.String() {
@@ -164,6 +197,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "/":
 			m.searching = true
 			m.search.Focus()
+			m.invalidateViewportBodyCache()
 			return m, nil
 		case "n":
 			m.nextMatch()
@@ -173,6 +207,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case "o":
 			m.outline = !m.outline
+			m.invalidateViewportBodyCache()
 			return m, nil
 		case "r":
 			m.reloadFile()
@@ -180,24 +215,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "t", "T":
 			m.themeIndex = themeIndex(m.theme.Name)
 			m.themeMenu = true
+			m.invalidateViewportBodyCache()
 			return m, nil
 		case "j", "down":
-			m.viewport.LineDown(1)
+			m.lineDown(1)
 			return m, nil
 		case "k", "up":
-			m.viewport.LineUp(1)
+			m.lineUp(1)
 			return m, nil
 		case "d", "ctrl+d", "pgdown", "pagedown", " ":
-			m.viewport.HalfViewDown()
+			m.halfViewDown()
 			return m, nil
 		case "u", "ctrl+u", "pgup", "pageup":
-			m.viewport.HalfViewUp()
+			m.halfViewUp()
 			return m, nil
 		case "g":
-			m.viewport.GotoTop()
+			m.gotoTop()
 			return m, nil
 		case "G":
-			m.viewport.GotoBottom()
+			m.gotoBottom()
 			return m, nil
 		}
 	}
@@ -206,12 +242,33 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+func (m model) updateMouse(msg tea.MouseMsg) (model, tea.Cmd) {
+	if m.themeMenu || m.searching || m.help || m.outline {
+		return m, nil
+	}
+	if msg.Action != tea.MouseActionPress {
+		return m, nil
+	}
+	switch msg.Button {
+	case tea.MouseButtonWheelUp:
+		m.lineUp(m.viewport.MouseWheelDelta)
+	case tea.MouseButtonWheelDown:
+		m.lineDown(m.viewport.MouseWheelDelta)
+	default:
+		return m, nil
+	}
+	return m, nil
+}
+
 func (m model) View() string {
-	body := m.paddedBody(m.viewport.View())
+	var body string
 	if m.themeMenu {
 		body = m.centeredView(m.themeMenuView())
-	} else if m.outline {
-		body = m.paddedBody(m.outlineView()) + "\n\n" + body
+	} else {
+		body = m.cachedViewportBody()
+		if m.outline {
+			body = m.paddedBody(m.outlineView()) + "\n\n" + body
+		}
 	}
 	if m.help {
 		body = m.paddedBody(m.helpView()) + "\n\n" + body
@@ -228,18 +285,22 @@ func (m model) updateThemeMenu(msg tea.KeyMsg) (model, tea.Cmd) {
 	switch msg.String() {
 	case "esc", "q", "t", "T":
 		m.themeMenu = false
+		m.invalidateViewportBodyCache()
 	case "up", "k":
 		m.themeIndex--
 		if m.themeIndex < 0 {
 			m.themeIndex = len(names) - 1
 		}
+		m.invalidateViewportBodyCache()
 	case "down", "j":
 		m.themeIndex = (m.themeIndex + 1) % len(names)
+		m.invalidateViewportBodyCache()
 	case "enter":
 		name := names[m.themeIndex]
 		m.theme = config.ThemeByName(name)
 		m.themeMenu = false
 		m.status = "theme: " + name
+		m.invalidateViewportBodyCache()
 		m.reloadRender()
 		return m, tea.Sequence(terminalBackgroundCmd(m.theme.Background), tea.ClearScreen)
 	}
@@ -250,6 +311,106 @@ func newViewport(width int, height int) viewport.Model {
 	vp := viewport.New(width, height)
 	vp.MouseWheelDelta = 6
 	return vp
+}
+
+func (m model) cachedViewportBody() string {
+	if m.hasImages || m.viewCache == nil {
+		return m.paddedBody(m.viewport.View())
+	}
+	key := m.viewportBodyCacheKey()
+	if m.viewCache.valid && m.viewCache.key == key {
+		m.viewCache.hits++
+		return m.viewCache.body
+	}
+	body := m.paddedBody(m.viewport.View())
+	m.viewCache.key = key
+	m.viewCache.body = body
+	m.viewCache.valid = true
+	m.viewCache.builds++
+	return body
+}
+
+func (m model) viewportBodyCacheKey() viewportBodyCacheKey {
+	return viewportBodyCacheKey{
+		contentRev:    m.contentRev,
+		yOffset:       m.viewport.YOffset,
+		viewportWidth: m.viewport.Width,
+		viewportLines: m.viewport.Height,
+		terminalWidth: m.terminalWidth(),
+		leftPadding:   m.leftPadding(),
+		rightPadding:  m.rightPadding(),
+		themeName:     m.theme.Name,
+		searchQuery:   strings.ToLower(strings.TrimSpace(m.search.Value())),
+	}
+}
+
+func (m *model) setViewportContent(content string) {
+	m.viewport.SetContent(content)
+	m.contentRev++
+	m.hasImages = hasImageProtocolLines(content)
+	m.invalidateViewportBodyCache()
+}
+
+func (m *model) setYOffset(offset int) {
+	before := m.viewport.YOffset
+	m.viewport.SetYOffset(offset)
+	if m.viewport.YOffset != before {
+		m.invalidateViewportBodyCache()
+	}
+}
+
+func (m *model) lineDown(lines int) {
+	before := m.viewport.YOffset
+	m.viewport.LineDown(lines)
+	if m.viewport.YOffset != before {
+		m.invalidateViewportBodyCache()
+	}
+}
+
+func (m *model) lineUp(lines int) {
+	before := m.viewport.YOffset
+	m.viewport.LineUp(lines)
+	if m.viewport.YOffset != before {
+		m.invalidateViewportBodyCache()
+	}
+}
+
+func (m *model) halfViewDown() {
+	before := m.viewport.YOffset
+	m.viewport.HalfViewDown()
+	if m.viewport.YOffset != before {
+		m.invalidateViewportBodyCache()
+	}
+}
+
+func (m *model) halfViewUp() {
+	before := m.viewport.YOffset
+	m.viewport.HalfViewUp()
+	if m.viewport.YOffset != before {
+		m.invalidateViewportBodyCache()
+	}
+}
+
+func (m *model) gotoTop() {
+	before := m.viewport.YOffset
+	m.viewport.GotoTop()
+	if m.viewport.YOffset != before {
+		m.invalidateViewportBodyCache()
+	}
+}
+
+func (m *model) gotoBottom() {
+	before := m.viewport.YOffset
+	m.viewport.GotoBottom()
+	if m.viewport.YOffset != before {
+		m.invalidateViewportBodyCache()
+	}
+}
+
+func (m *model) invalidateViewportBodyCache() {
+	if m.viewCache != nil {
+		m.viewCache.valid = false
+	}
 }
 
 func (m *model) reloadFile() {
@@ -279,6 +440,8 @@ func (m *model) reloadRender() {
 		Render(doc)
 	m.totalLines = lineCount(m.content)
 	m.headings = doc.Headings
+	m.hasImages = hasImageProtocolLines(m.content)
+	m.invalidateViewportBodyCache()
 	m.applySearch()
 }
 
@@ -286,7 +449,7 @@ func (m *model) applySearch() {
 	query := strings.ToLower(strings.TrimSpace(m.search.Value()))
 	m.matches = nil
 	if query == "" {
-		m.viewport.SetContent(m.content)
+		m.setViewportContent(m.content)
 		return
 	}
 	for i, line := range strings.Split(m.content, "\n") {
@@ -296,9 +459,9 @@ func (m *model) applySearch() {
 	}
 	if len(m.matches) > 0 {
 		m.matchIndex = 0
-		m.viewport.SetYOffset(m.matches[0])
+		m.setYOffset(m.matches[0])
 	}
-	m.viewport.SetContent(m.highlightedContent(query))
+	m.setViewportContent(m.highlightedContent(query))
 }
 
 func (m *model) nextMatch() {
@@ -309,7 +472,7 @@ func (m *model) nextMatch() {
 		return
 	}
 	m.matchIndex = (m.matchIndex + 1) % len(m.matches)
-	m.viewport.SetYOffset(m.matches[m.matchIndex])
+	m.setYOffset(m.matches[m.matchIndex])
 }
 
 func (m *model) previousMatch() {
@@ -323,7 +486,7 @@ func (m *model) previousMatch() {
 	if m.matchIndex < 0 {
 		m.matchIndex = len(m.matches) - 1
 	}
-	m.viewport.SetYOffset(m.matches[m.matchIndex])
+	m.setYOffset(m.matches[m.matchIndex])
 }
 
 func (m model) outlineView() string {
@@ -485,6 +648,10 @@ func (m model) highlightedContent(query string) string {
 
 func isImageProtocolLine(line string) bool {
 	return strings.Contains(line, "\x1b_G") || strings.Contains(line, "\U0010eeee")
+}
+
+func hasImageProtocolLines(content string) bool {
+	return strings.Contains(content, "\x1b_G") || strings.Contains(content, "\U0010eeee")
 }
 
 func (m model) contentWidth() int {

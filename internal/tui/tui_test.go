@@ -192,6 +192,144 @@ func TestMouseWheelScrollsViewportWithTunedDelta(t *testing.T) {
 	}
 }
 
+func TestMouseMotionDoesNotScrollViewport(t *testing.T) {
+	m := model{
+		theme:    config.ThemeByName("mono"),
+		viewport: newViewport(20, 4),
+		content:  strings.Join([]string{"one", "two", "three", "four", "five", "six", "seven", "eight"}, "\n"),
+	}
+	m.viewport.SetContent(m.content)
+
+	m = updateMouse(t, m, tea.MouseMsg{
+		Action: tea.MouseActionMotion,
+		Button: tea.MouseButtonWheelDown,
+		Type:   tea.MouseMotion,
+	})
+	if m.viewport.YOffset != 0 {
+		t.Fatalf("expected mouse motion to be ignored, got offset %d", m.viewport.YOffset)
+	}
+}
+
+func TestMouseWheelDoesNotScrollBehindThemeMenu(t *testing.T) {
+	m := model{
+		theme:     config.ThemeByName("mono"),
+		viewport:  newViewport(20, 4),
+		content:   strings.Join([]string{"one", "two", "three", "four", "five", "six", "seven", "eight"}, "\n"),
+		themeMenu: true,
+	}
+	m.viewport.SetContent(m.content)
+
+	m = updateMouse(t, m, tea.MouseMsg{
+		Action: tea.MouseActionPress,
+		Button: tea.MouseButtonWheelDown,
+		Type:   tea.MouseWheelDown,
+	})
+	if m.viewport.YOffset != 0 {
+		t.Fatalf("expected wheel event behind theme menu to be ignored, got offset %d", m.viewport.YOffset)
+	}
+}
+
+func TestViewportBodyCacheReusesVisibleOutput(t *testing.T) {
+	m := cachedBodyModel("one\ntwo\nthree\nfour\nfive\nsix")
+
+	_ = m.View()
+	if m.viewCache.builds != 1 {
+		t.Fatalf("expected first view to build cache once, got %d", m.viewCache.builds)
+	}
+
+	_ = m.View()
+	if m.viewCache.builds != 1 {
+		t.Fatalf("expected second view to reuse cache, got %d builds", m.viewCache.builds)
+	}
+	if m.viewCache.hits != 1 {
+		t.Fatalf("expected one cache hit, got %d", m.viewCache.hits)
+	}
+}
+
+func TestViewportBodyCacheInvalidatesOnScrollOffset(t *testing.T) {
+	m := cachedBodyModel("one\ntwo\nthree\nfour\nfive\nsix\nseven\neight")
+	_ = m.View()
+
+	m.lineDown(1)
+	_ = m.View()
+
+	if m.viewCache.builds != 2 {
+		t.Fatalf("expected scroll offset change to rebuild cache, got %d builds", m.viewCache.builds)
+	}
+}
+
+func TestViewportBodyCacheInvalidatesOnThemeRerender(t *testing.T) {
+	m := cachedMarkdownModel("# Title\n\nBody")
+	m.reloadRender()
+	_ = m.View()
+
+	m.theme = config.ThemeByName("github")
+	m.reloadRender()
+	_ = m.View()
+
+	if m.viewCache.builds != 2 {
+		t.Fatalf("expected theme rerender to rebuild cache, got %d builds", m.viewCache.builds)
+	}
+}
+
+func TestViewportBodyCacheInvalidatesOnSearchHighlight(t *testing.T) {
+	m := cachedBodyModel("alpha\nbeta alpha\ngamma")
+	_ = m.View()
+
+	m.search.SetValue("alpha")
+	m.applySearch()
+	_ = m.View()
+
+	if m.viewCache.builds != 2 {
+		t.Fatalf("expected search highlight to rebuild cache, got %d builds", m.viewCache.builds)
+	}
+	if len(m.matches) != 2 {
+		t.Fatalf("expected search matches to be preserved, got %d", len(m.matches))
+	}
+}
+
+func TestViewportBodyCacheInvalidatesOnTerminalResize(t *testing.T) {
+	m := cachedMarkdownModel("# Title\n\nBody")
+	m.reloadRender()
+	_ = m.View()
+
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 20})
+	m = updated.(model)
+	_ = m.View()
+
+	if m.viewCache.builds != 2 {
+		t.Fatalf("expected terminal resize to rebuild cache, got %d builds", m.viewCache.builds)
+	}
+}
+
+func TestViewportBodyCacheInvalidatesOnOverlayOpenClose(t *testing.T) {
+	m := cachedBodyModel("one\ntwo\nthree\nfour")
+	_ = m.View()
+
+	m = updateKey(t, m, "T")
+	_ = m.View()
+	if m.viewCache.builds != 1 {
+		t.Fatalf("theme menu should not rebuild viewport body while open, got %d builds", m.viewCache.builds)
+	}
+
+	m = updateKey(t, m, "T")
+	_ = m.View()
+	if m.viewCache.builds != 2 {
+		t.Fatalf("expected closing overlay to rebuild viewport body, got %d builds", m.viewCache.builds)
+	}
+}
+
+func TestViewportBodyCacheSkipsImageProtocolContent(t *testing.T) {
+	m := cachedBodyModel("title\n\x1b_Ga=T,q=2;payload\x1b\\\nlogo.png")
+
+	_ = m.View()
+	_ = m.View()
+
+	if m.viewCache.builds != 0 || m.viewCache.hits != 0 {
+		t.Fatalf("expected image protocol content to skip cache, got %d builds and %d hits", m.viewCache.builds, m.viewCache.hits)
+	}
+}
+
 func TestKeyboardShortcutsJumpTopBottom(t *testing.T) {
 	m := model{
 		theme:    config.ThemeByName("mono"),
@@ -332,6 +470,31 @@ func updateMouse(t *testing.T, m model, msg tea.MouseMsg) model {
 		t.Fatalf("expected model update, got %T", updated)
 	}
 	return got
+}
+
+func cachedBodyModel(content string) model {
+	m := model{
+		theme:     config.ThemeByName("mono"),
+		viewport:  newViewport(20, 4),
+		viewCache: &viewportBodyCache{},
+		width:     88,
+		content:   content,
+	}
+	m.setViewportContent(content)
+	return m
+}
+
+func cachedMarkdownModel(content string) model {
+	return model{
+		theme:     config.ThemeByName("mono"),
+		viewport:  newViewport(20, 4),
+		viewCache: &viewportBodyCache{},
+		width:     88,
+		source: source.Source{
+			Name:    "test.md",
+			Content: content,
+		},
+	}
 }
 
 func sourceForTest(name string) source.Source {

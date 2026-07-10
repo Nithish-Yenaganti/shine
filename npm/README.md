@@ -15,7 +15,7 @@ shine README.md
 - renders Markdown in an interactive terminal preview
 - checks README, changelog, and release-note files before publishing
 - supports `--print`, `--plain`, `--outline`, and `--check`
-- includes themes, responsive page gutters, keyboard and mouse scrolling, outline view, and live reload
+- includes themes, responsive page gutters, keyboard and mouse scrolling, outline view, live reload, and optimized redraws
 - optionally renders Mermaid diagrams when Mermaid CLI (`mmdc`) is installed
 
 ## Image Support
@@ -25,6 +25,12 @@ Inline image previews work only in Kitty-compatible terminals, currently Kitty a
 Apple's default macOS Terminal.app and unsupported terminals show text placeholders instead. `--print`, `--plain`, remote images, and missing files also use placeholders.
 
 Mermaid diagrams use the same image path. If `mmdc` is unavailable, Mermaid blocks remain visible as code.
+
+## Terminal Controls
+
+Use `j/k`, arrow keys, page keys, `g/G`, or the mouse wheel to scroll. Press `t` or `T` to open the theme picker.
+
+Mouse motion and clicks that are not wheel events are ignored. Help, outline, search, and theme overlays block document scrolling behind them.
 
 ## Commands
 

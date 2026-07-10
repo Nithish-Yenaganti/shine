@@ -11,7 +11,7 @@ Current version: `0.1.1`.
 ## Features
 
 - Markdown files, stdin, and non-interactive output
-- TUI preview with keyboard and mouse scrolling, search, outline, help, themes, and responsive page gutters
+- TUI preview with keyboard and mouse scrolling, search, outline, help, themes, responsive page gutters, and optimized redraws
 - Tables, callouts, task lists, code blocks, links, and inline styles
 - Local image previews in Kitty/Ghostty-compatible terminals
 - Optional Mermaid previews through Mermaid CLI (`mmdc`)
@@ -122,6 +122,8 @@ t/T        theme picker
 h/H/F1     show help panel
 ?          toggle help panel
 ```
+
+Mouse wheel scrolling is tuned for terminal use. Non-wheel mouse motion is ignored, and overlays such as help, outline, search, and the theme picker block document scrolling behind them.
 
 ## Themes
 

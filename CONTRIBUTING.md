@@ -43,6 +43,7 @@ bin/shine --check README.md
 - Add tests for behavior changes.
 - Update README or CHANGELOG when user-facing behavior changes.
 - For theme changes, include the display name, aliases if needed, docs updates, and palette tests.
+- For TUI interaction changes, cover keyboard, mouse wheel, overlay blocking, and redraw/cache invalidation behavior where relevant.
 - Avoid unrelated formatting or dependency churn.
 - Explain why the change matters for terminal Markdown review.
 

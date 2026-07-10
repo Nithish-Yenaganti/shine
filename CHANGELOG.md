@@ -9,6 +9,7 @@ All notable changes to `shine` will be documented in this file.
 - Added optional Mermaid diagram previews through Mermaid CLI (`mmdc`) with cached image output and code fallback.
 - Added `T` as an alternate theme-picker shortcut.
 - Added explicit Bubble Tea mouse support for smoother wheel scrolling.
+- Added cached viewport body redraws for repeated TUI renders after mouse scrolling.
 
 ### Unreleased Changed
 
@@ -17,6 +18,7 @@ All notable changes to `shine` will be documented in this file.
 - Tuned mouse wheel scrolling to move more lines per wheel tick.
 - Updated theme display names, aliases, and README theme documentation.
 - Changed README logo references to use `fixtures/LOGO.jpeg`.
+- Changed the theme picker to avoid rebuilding the document viewport while the overlay is open.
 
 ## 0.1.1 - 2026-07-03
 
