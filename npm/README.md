@@ -2,7 +2,7 @@
 
 Terminal Markdown preview and docs checks from your shell.
 
-Current version: `0.1.1`.
+Current version: `0.1.2`.
 
 ```sh
 # Install the CLI globally from npm
@@ -23,6 +23,8 @@ shine README.md
 ## Image Support
 
 Inline image previews work only in Kitty-compatible terminals, currently Kitty and Ghostty.
+
+JPEG and GIF previews use cached local PNG files for responsive scrolling.
 
 Apple's default macOS Terminal.app and unsupported terminals show text placeholders instead. `--print`, `--plain`, remote images, and missing files also use placeholders.
 

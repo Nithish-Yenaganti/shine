@@ -12,6 +12,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	"image/png"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -504,54 +505,101 @@ func (r Renderer) kittyImage(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	imageID := kittyImageID(path)
+	transferPath := path
 	if format != "png" {
-		return r.kittyImageData(path, imageID, cols, rows)
+		transferPath, err = cachedImagePNG(path)
+		if err != nil {
+			return "", err
+		}
 	}
-	payload := base64.StdEncoding.EncodeToString([]byte(path))
+	imageID := kittyImageID(transferPath)
+	payload := base64.StdEncoding.EncodeToString([]byte(transferPath))
 	escape := fmt.Sprintf("\x1b_Ga=T,q=2,f=100,t=f,U=1,i=%d,c=%d,r=%d;%s\x1b\\", imageID, cols, rows, payload)
 	return escape + kittyPlaceholder(imageID, cols, rows), nil
 }
 
-func (r Renderer) kittyImageData(path string, imageID int, cols int, rows int) (string, error) {
+func cachedImagePNG(path string) (string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	cacheDir, err := imageCacheDir()
+	if err != nil {
+		return "", err
+	}
+	cachePath := filepath.Join(cacheDir, hex.EncodeToString(hash.Sum(nil))+".png")
+	if isRegularFile(cachePath) {
+		return cachePath, nil
+	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
 	img, _, err := image.Decode(file)
 	if err != nil {
 		return "", err
 	}
-	var pngBytes bytes.Buffer
-	if err := png.Encode(&pngBytes, img); err != nil {
+	if err := writeCachedPNG(cacheDir, cachePath, img); err != nil {
 		return "", err
 	}
-	payload := base64.StdEncoding.EncodeToString(pngBytes.Bytes())
-	escape := kittyChunks(payload, fmt.Sprintf("a=T,q=2,f=100,U=1,i=%d,c=%d,r=%d", imageID, cols, rows))
-	return escape + kittyPlaceholder(imageID, cols, rows), nil
+	return cachePath, nil
 }
 
-func kittyChunks(payload string, firstControl string) string {
-	const chunkSize = 4096
-	if len(payload) <= chunkSize {
-		return fmt.Sprintf("\x1b_G%s;%s\x1b\\", firstControl, payload)
+func imageCacheDir() (string, error) {
+	base, err := os.UserCacheDir()
+	if err != nil || base == "" {
+		return "", fmt.Errorf("image cache unavailable")
 	}
-	var chunks []string
-	for start := 0; start < len(payload); start += chunkSize {
-		end := min(start+chunkSize, len(payload))
-		more := "0"
-		if end < len(payload) {
-			more = "1"
-		}
-		control := "m=" + more
-		if start == 0 {
-			control = firstControl + ",m=" + more
-		}
-		chunks = append(chunks, fmt.Sprintf("\x1b_G%s;%s\x1b\\", control, payload[start:end]))
+	dir := filepath.Join(base, "shine", "images")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
 	}
-	return strings.Join(chunks, "")
+	info, err := os.Lstat(dir)
+	if err != nil {
+		return "", err
+	}
+	if !info.IsDir() {
+		return "", fmt.Errorf("image cache path is not a directory")
+	}
+	if info.Mode().Perm() != 0o700 {
+		if err := os.Chmod(dir, 0o700); err != nil {
+			return "", err
+		}
+	}
+	return dir, nil
+}
+
+func writeCachedPNG(cacheDir string, cachePath string, img image.Image) error {
+	temp, err := os.CreateTemp(cacheDir, ".image-*.png")
+	if err != nil {
+		return err
+	}
+	tempPath := temp.Name()
+	defer os.Remove(tempPath)
+	if err := png.Encode(temp, img); err != nil {
+		_ = temp.Close()
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tempPath, cachePath); err != nil {
+		if isRegularFile(cachePath) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func isRegularFile(path string) bool {
+	info, err := os.Lstat(path)
+	return err == nil && info.Mode().IsRegular() && info.Size() > 0
 }
 
 func kittyImageID(path string) int {

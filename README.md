@@ -6,7 +6,7 @@
 
 Preview Markdown without leaving the terminal, then run quick checks for common publishing issues before your docs land.
 
-Current version: `0.1.1`.
+Current version: `0.1.2`.
 
 ## Features
 
@@ -63,6 +63,8 @@ shine --check README.md
 ## Image Previews
 
 Local images render inline in the interactive TUI on Kitty-compatible terminals, currently Kitty and Ghostty. Image paths resolve relative to the Markdown file, so `![Logo](fixtures/LOGO.jpeg)` works from `README.md`.
+
+JPEG and GIF previews are cached as local PNG files to keep image-heavy scrolling and theme changes responsive.
 
 Unsupported terminals, including Apple's default macOS Terminal.app, show a text placeholder instead. `--print`, `--plain`, remote images, and missing files also use placeholders.
 
@@ -123,7 +125,7 @@ h/H/F1     show help panel
 ?          toggle help panel
 ```
 
-Mouse wheel scrolling is tuned for terminal use. Non-wheel mouse motion is ignored, and overlays such as help, outline, search, and the theme picker block document scrolling behind them.
+Mouse wheel scrolling is tuned for terminal use. Non-wheel mouse input is filtered before redraws, and overlays such as help, outline, search, and the theme picker block document scrolling behind them.
 
 ## Themes
 
@@ -153,10 +155,13 @@ goreleaser release --snapshot --clean
 Publish:
 
 ```sh
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
+# Wait for the GitHub release workflow and all release assets
 npm run publish:npm -- --access public
 ```
+
+The npm publish command checks that `0.1.2` is still available and that the published GitHub release contains every required asset.
 
 Checklist:
 
@@ -164,6 +169,7 @@ Checklist:
 - `go vet ./...`
 - `go build -o bin/shine ./cmd/shine`
 - `npm run test:npm`
+- `npm run test:publish`
 - `bin/shine --check README.md`
 - `goreleaser check`
 
@@ -174,6 +180,7 @@ go test ./...
 go vet ./...
 go build -o bin/shine ./cmd/shine
 npm run test:npm
+npm run test:publish
 ```
 
 ## Community

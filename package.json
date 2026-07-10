@@ -1,6 +1,6 @@
 {
   "name": "@nk02/shine",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Terminal Markdown previewer and docs quality checker for README, changelog, and release-note workflows.",
   "license": "MIT",
   "repository": {
@@ -24,7 +24,8 @@
   "scripts": {
     "postinstall": "node npm/install.js",
     "publish:npm": "node npm/publish.js",
-    "test:npm": "SHINE_BINARY_PATH=bin/shine node npm/shine.js version"
+    "test:npm": "SHINE_BINARY_PATH=bin/shine node npm/shine.js version",
+    "test:publish": "node --test npm/publish.test.js"
   },
   "os": [
     "darwin",

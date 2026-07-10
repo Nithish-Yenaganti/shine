@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
@@ -336,9 +337,10 @@ func TestGhosttyImageRenderingUsesUnicodePlaceholderPlacement(t *testing.T) {
 	}
 }
 
-func TestKittyImageRenderingSupportsDecodedLocalImages(t *testing.T) {
+func TestKittyImageRenderingCachesJPEGForFileTransfer(t *testing.T) {
 	t.Setenv("TERM", "xterm-kitty")
 	t.Setenv("TERM_PROGRAM", "")
+	cacheDir := useTestImageCache(t)
 	dir := t.TempDir()
 	imagePath := filepath.Join(dir, "photo.jpg")
 	writeTestJPEG(t, imagePath)
@@ -352,14 +354,105 @@ func TestKittyImageRenderingSupportsDecodedLocalImages(t *testing.T) {
 		WithImages(true).
 		Render(doc)
 
-	if !strings.Contains(out, "\x1b_Ga=T,q=2,f=100,U=1,i=") {
-		t.Fatalf("missing kitty graphics payload escape:\n%q", out)
+	if !strings.Contains(out, "\x1b_Ga=T,q=2,f=100,t=f,U=1,i=") {
+		t.Fatalf("missing kitty file transfer escape:\n%q", out)
 	}
-	if strings.Contains(out, "t=f") {
-		t.Fatalf("decoded non-PNG image should use direct payload transfer, got file transfer:\n%q", out)
+	cachedPath := kittyFileTransferPath(t, out)
+	if cachedPath == imagePath {
+		t.Fatalf("JPEG should transfer a cached PNG, got original path %q", cachedPath)
+	}
+	if filepath.Dir(cachedPath) != cacheDir || filepath.Ext(cachedPath) != ".png" {
+		t.Fatalf("cached image path = %q, want PNG in %q", cachedPath, cacheDir)
+	}
+	file, err := os.Open(cachedPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if _, format, err := image.DecodeConfig(file); err != nil || format != "png" {
+		t.Fatalf("cached image format = %q, err = %v; want png", format, err)
 	}
 	if strings.Contains(out, "image preview unavailable") || strings.Contains(out, "image preview failed") {
-		t.Fatalf("expected decoded image rendering, got fallback:\n%q", out)
+		t.Fatalf("expected cached image rendering, got fallback:\n%q", out)
+	}
+}
+
+func TestKittyJPEGProtocolOutputRemainsBounded(t *testing.T) {
+	t.Setenv("TERM", "xterm-kitty")
+	t.Setenv("TERM_PROGRAM", "")
+	useTestImageCache(t)
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "large-photo.jpg")
+	writeLargeTestJPEG(t, imagePath)
+	doc, err := parser.Parse([]byte("![Photo](large-photo.jpg)\n"), filepath.Join(dir, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := New(48, config.ThemeByName("mono")).
+		WithSourcePath(filepath.Join(dir, "README.md")).
+		WithImages(true).
+		Render(doc)
+
+	if len(out) > 16*1024 {
+		t.Fatalf("JPEG protocol output is %d bytes, want at most 16 KiB", len(out))
+	}
+	if !strings.Contains(out, "t=f") {
+		t.Fatalf("bounded JPEG output should use file transfer:\n%q", out)
+	}
+}
+
+func TestNonPNGImageCacheReusesConversionAndInvalidatesChanges(t *testing.T) {
+	cacheDir := useTestImageCache(t)
+	dir := t.TempDir()
+	imagePath := filepath.Join(dir, "photo.jpg")
+	writeTestJPEGColor(t, imagePath, color.RGBA{R: 80, G: 120, B: 220, A: 255})
+	r := New(48, config.ThemeByName("mono"))
+
+	first, err := r.kittyImage(imagePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstPath := kittyFileTransferPath(t, first)
+	marker := time.Unix(123456789, 0)
+	if err := os.Chtimes(firstPath, marker, marker); err != nil {
+		t.Fatal(err)
+	}
+	markedInfo, err := os.Stat(firstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	second, err := r.kittyImage(imagePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondPath := kittyFileTransferPath(t, second)
+	secondInfo, err := os.Stat(secondPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if secondPath != firstPath {
+		t.Fatalf("unchanged source used cache path %q, want %q", secondPath, firstPath)
+	}
+	if !os.SameFile(markedInfo, secondInfo) || !secondInfo.ModTime().Equal(markedInfo.ModTime()) {
+		t.Fatalf("unchanged source rewrote cached PNG %q", secondPath)
+	}
+
+	writeTestJPEGColor(t, imagePath, color.RGBA{R: 220, G: 90, B: 40, A: 255})
+	changed, err := r.kittyImage(imagePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changedPath := kittyFileTransferPath(t, changed)
+	if changedPath == firstPath {
+		t.Fatalf("changed source reused stale cache path %q", changedPath)
+	}
+	if filepath.Dir(changedPath) != cacheDir {
+		t.Fatalf("changed source cache path = %q, want directory %q", changedPath, cacheDir)
+	}
+	if _, err := os.Stat(changedPath); err != nil {
+		t.Fatalf("changed source cache file missing: %v", err)
 	}
 }
 
@@ -519,10 +612,15 @@ func assertPlaceholderColorMatchesImageID(t *testing.T, out string) {
 
 func writeTestJPEG(t *testing.T, path string) {
 	t.Helper()
+	writeTestJPEGColor(t, path, color.RGBA{R: 80, G: 120, B: 220, A: 255})
+}
+
+func writeTestJPEGColor(t *testing.T, path string, fill color.RGBA) {
+	t.Helper()
 	img := image.NewRGBA(image.Rect(0, 0, 4, 2))
 	for y := 0; y < 2; y++ {
 		for x := 0; x < 4; x++ {
-			img.Set(x, y, color.RGBA{R: 80, G: 120, B: 220, A: 255})
+			img.Set(x, y, fill)
 		}
 	}
 	file, err := os.Create(path)
@@ -533,6 +631,65 @@ func writeTestJPEG(t *testing.T, path string) {
 	if err := jpeg.Encode(file, img, nil); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func writeLargeTestJPEG(t *testing.T, path string) {
+	t.Helper()
+	const size = 256
+	img := image.NewRGBA(image.Rect(0, 0, size, size))
+	for y := 0; y < size; y++ {
+		for x := 0; x < size; x++ {
+			img.Set(x, y, color.RGBA{
+				R: uint8(x*31 + y*17),
+				G: uint8(x*13 + y*29),
+				B: uint8(x*23 + y*11),
+				A: 255,
+			})
+		}
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if err := jpeg.Encode(file, img, &jpeg.Options{Quality: 90}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func useTestImageCache(t *testing.T) string {
+	t.Helper()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(home, "cache"))
+	base, err := os.UserCacheDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return filepath.Join(base, "shine", "images")
+}
+
+func kittyFileTransferPath(t *testing.T, output string) string {
+	t.Helper()
+	start := strings.Index(output, "\x1b_G")
+	if start < 0 {
+		t.Fatalf("missing kitty graphics escape:\n%q", output)
+	}
+	payloadStart := strings.Index(output[start:], ";")
+	if payloadStart < 0 {
+		t.Fatalf("missing kitty file payload:\n%q", output)
+	}
+	payloadStart += start + 1
+	payloadEnd := strings.Index(output[payloadStart:], "\x1b\\")
+	if payloadEnd < 0 {
+		t.Fatalf("unterminated kitty file payload:\n%q", output)
+	}
+	payload := output[payloadStart : payloadStart+payloadEnd]
+	decoded, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		t.Fatalf("invalid kitty file payload %q: %v", payload, err)
+	}
+	return string(decoded)
 }
 
 func fakeMermaidCommand(t *testing.T, renderedImage string) string {

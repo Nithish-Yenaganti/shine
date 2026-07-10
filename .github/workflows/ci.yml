@@ -18,3 +18,4 @@ jobs:
       - run: go vet ./...
       - run: go build -o bin/shine ./cmd/shine
       - run: npm run test:npm
+      - run: npm run test:publish

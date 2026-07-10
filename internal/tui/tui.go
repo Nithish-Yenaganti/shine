@@ -82,9 +82,27 @@ type watchFailed struct {
 type terminalBackgroundMsg struct{}
 
 func Run(opts Options) error {
-	doc, err := parser.Parse([]byte(opts.Source.Content), opts.Source.Name)
+	m, err := newModel(opts)
 	if err != nil {
 		return err
+	}
+	programOptions := []tea.ProgramOption{
+		tea.WithInput(os.Stdin),
+		tea.WithOutput(os.Stdout),
+		tea.WithMouseCellMotion(),
+		tea.WithFilter(filterMouseEvents),
+	}
+	if opts.UseAltScreen {
+		programOptions = append(programOptions, tea.WithAltScreen())
+	}
+	_, err = tea.NewProgram(m, programOptions...).Run()
+	return err
+}
+
+func newModel(opts Options) (model, error) {
+	doc, err := parser.Parse([]byte(opts.Source.Content), opts.Source.Name)
+	if err != nil {
+		return model{}, err
 	}
 	input := textinput.New()
 	input.Prompt = "/"
@@ -111,26 +129,15 @@ func Run(opts Options) error {
 		width:      initialWidth,
 		height:     initialHeight,
 		content:    content,
-		contentRev: 1,
-		hasImages:  hasImageProtocolLines(content),
 		totalLines: lineCount(content),
 		status:     "shine",
 	}
 	m.headings = doc.Headings
-	programOptions := []tea.ProgramOption{
-		tea.WithInput(os.Stdin),
-		tea.WithOutput(os.Stdout),
-		tea.WithMouseCellMotion(),
-	}
-	if opts.UseAltScreen {
-		programOptions = append(programOptions, tea.WithAltScreen())
-	}
-	_, err = tea.NewProgram(m, programOptions...).Run()
-	return err
+	m.setViewportContent(content)
+	return m, nil
 }
 
 func (m model) Init() tea.Cmd {
-	m.setViewportContent(m.content)
 	var cmds []tea.Cmd
 	if m.theme.Background != "" {
 		cmds = append(cmds, tea.Sequence(terminalBackgroundCmd(m.theme.Background), tea.ClearScreen))
@@ -139,6 +146,33 @@ func (m model) Init() tea.Cmd {
 		cmds = append(cmds, watchFile(m.source.Path))
 	}
 	return tea.Batch(cmds...)
+}
+
+func filterMouseEvents(current tea.Model, msg tea.Msg) tea.Msg {
+	mouse, ok := msg.(tea.MouseMsg)
+	if !ok {
+		return msg
+	}
+	if mouse.Action != tea.MouseActionPress ||
+		(mouse.Button != tea.MouseButtonWheelUp && mouse.Button != tea.MouseButtonWheelDown) {
+		return nil
+	}
+
+	switch current := current.(type) {
+	case model:
+		if current.overlayActive() {
+			return nil
+		}
+	case *model:
+		if current.overlayActive() {
+			return nil
+		}
+	}
+	return msg
+}
+
+func (m model) overlayActive() bool {
+	return m.themeMenu || m.searching || m.help || m.outline
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -168,13 +202,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "enter":
 				m.searching = false
+				m.search.Blur()
 				m.invalidateViewportBodyCache()
 				m.applySearch()
 				return m, nil
 			case "esc":
 				m.searching = false
 				m.search.SetValue("")
-				m.invalidateViewportBodyCache()
+				m.search.Blur()
+				m.matches = nil
+				m.matchIndex = 0
+				m.setViewportContent(m.content)
 				return m, nil
 			}
 			var cmd tea.Cmd
@@ -196,9 +234,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Sequence(terminalBackgroundCmd(""), tea.Quit)
 		case "/":
 			m.searching = true
-			m.search.Focus()
 			m.invalidateViewportBodyCache()
-			return m, nil
+			return m, m.search.Focus()
 		case "n":
 			m.nextMatch()
 			return m, nil

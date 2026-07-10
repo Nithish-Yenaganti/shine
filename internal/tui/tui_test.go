@@ -13,6 +13,23 @@ import (
 	"github.com/Nithish-Yenaganti/shine/internal/source"
 )
 
+func TestNewModelPopulatesInitialViewport(t *testing.T) {
+	m, err := newModel(Options{
+		Source: source.Source{
+			Name:    "test.md",
+			Content: "# Ready\n\nInitial viewport content",
+		},
+		Theme: config.ThemeByName("mono"),
+	})
+	if err != nil {
+		t.Fatalf("newModel returned an error: %v", err)
+	}
+
+	if got := ansi.Strip(m.viewport.View()); !strings.Contains(got, "Initial viewport content") {
+		t.Fatalf("expected constructed model viewport to contain rendered content, got %q", got)
+	}
+}
+
 func TestBackgroundScreenDoesNotPadRows(t *testing.T) {
 	m := model{
 		theme:  config.ThemeByName("github"),
@@ -229,6 +246,45 @@ func TestMouseWheelDoesNotScrollBehindThemeMenu(t *testing.T) {
 	}
 }
 
+func TestFilterMouseEvents(t *testing.T) {
+	ignored := []tea.MouseMsg{
+		{Action: tea.MouseActionPress, Button: tea.MouseButtonLeft, Type: tea.MouseLeft},
+		{Action: tea.MouseActionRelease, Button: tea.MouseButtonWheelDown, Type: tea.MouseWheelDown},
+		{Action: tea.MouseActionPress, Button: tea.MouseButtonWheelLeft, Type: tea.MouseWheelLeft},
+	}
+	for _, event := range ignored {
+		if got := filterMouseEvents(model{}, event); got != nil {
+			t.Fatalf("expected ignored mouse event to be filtered, got %#v", got)
+		}
+	}
+
+	wheel := tea.MouseMsg{
+		Action: tea.MouseActionPress,
+		Button: tea.MouseButtonWheelDown,
+		Type:   tea.MouseWheelDown,
+	}
+	if got := filterMouseEvents(model{}, wheel); got != wheel {
+		t.Fatalf("expected wheel event to pass through, got %#v", got)
+	}
+
+	overlays := []struct {
+		name  string
+		model model
+	}{
+		{name: "theme", model: model{themeMenu: true}},
+		{name: "search", model: model{searching: true}},
+		{name: "help", model: model{help: true}},
+		{name: "outline", model: model{outline: true}},
+	}
+	for _, tt := range overlays {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := filterMouseEvents(tt.model, wheel); got != nil {
+				t.Fatalf("expected wheel event to be filtered while overlay is active, got %#v", got)
+			}
+		})
+	}
+}
+
 func TestViewportBodyCacheReusesVisibleOutput(t *testing.T) {
 	m := cachedBodyModel("one\ntwo\nthree\nfour\nfive\nsix")
 
@@ -285,6 +341,73 @@ func TestViewportBodyCacheInvalidatesOnSearchHighlight(t *testing.T) {
 	}
 	if len(m.matches) != 2 {
 		t.Fatalf("expected search matches to be preserved, got %d", len(m.matches))
+	}
+}
+
+func TestEscapeCancelsSearchAndRestoresViewport(t *testing.T) {
+	m, err := newModel(Options{
+		Source: source.Source{
+			Name:    "test.md",
+			Content: "alpha\n\nbeta alpha\n\ngamma",
+		},
+		Theme: config.ThemeByName("mono"),
+	})
+	if err != nil {
+		t.Fatalf("newModel returned an error: %v", err)
+	}
+	originalViewport := m.viewport.View()
+	m.search.SetValue("alpha")
+	m.search.Focus()
+	m.applySearch()
+	m.searching = true
+	if len(m.matches) == 0 {
+		t.Fatal("expected search setup to create matches")
+	}
+
+	m = updateKeyMsg(t, m, tea.KeyMsg{Type: tea.KeyEsc})
+
+	if m.searching {
+		t.Fatal("expected Escape to leave search mode")
+	}
+	if got := m.search.Value(); got != "" {
+		t.Fatalf("expected Escape to clear search query, got %q", got)
+	}
+	if m.matches != nil {
+		t.Fatalf("expected Escape to clear matches, got %v", m.matches)
+	}
+	if m.search.Focused() {
+		t.Fatal("expected Escape to blur search input")
+	}
+	if got := m.viewport.View(); got != originalViewport {
+		t.Fatalf("expected Escape to restore original viewport content:\n%q\nwant:\n%q", got, originalViewport)
+	}
+}
+
+func TestEnterAppliesSearchAndBlursInput(t *testing.T) {
+	m, err := newModel(Options{
+		Source: source.Source{
+			Name:    "test.md",
+			Content: "alpha\n\nbeta alpha\n\ngamma",
+		},
+		Theme: config.ThemeByName("mono"),
+	})
+	if err != nil {
+		t.Fatalf("newModel returned an error: %v", err)
+	}
+	m.search.SetValue("alpha")
+	m.search.Focus()
+	m.searching = true
+
+	m = updateKeyMsg(t, m, tea.KeyMsg{Type: tea.KeyEnter})
+
+	if m.searching {
+		t.Fatal("expected Enter to leave search mode")
+	}
+	if m.search.Focused() {
+		t.Fatal("expected Enter to blur search input")
+	}
+	if len(m.matches) != 2 {
+		t.Fatalf("expected Enter to apply search, got %d matches", len(m.matches))
 	}
 }
 

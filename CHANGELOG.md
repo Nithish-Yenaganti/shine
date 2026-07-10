@@ -4,14 +4,17 @@ All notable changes to `shine` will be documented in this file.
 
 ## Unreleased
 
-### Unreleased Added
+## 0.1.2 - 2026-07-10
+
+### 0.1.2 Added
 
 - Added optional Mermaid diagram previews through Mermaid CLI (`mmdc`) with cached image output and code fallback.
 - Added `T` as an alternate theme-picker shortcut.
 - Added explicit Bubble Tea mouse support for smoother wheel scrolling.
 - Added cached viewport body redraws for repeated TUI renders after mouse scrolling.
+- Added npm publication checks for duplicate versions and missing GitHub release assets.
 
-### Unreleased Changed
+### 0.1.2 Changed
 
 - Changed the TUI layout to use responsive page gutters based on terminal width.
 - Changed the default `mono` theme to use a black background, white document text, and highlighted dark code blocks.
@@ -19,6 +22,13 @@ All notable changes to `shine` will be documented in this file.
 - Updated theme display names, aliases, and README theme documentation.
 - Changed README logo references to use `fixtures/LOGO.jpeg`.
 - Changed the theme picker to avoid rebuilding the document viewport while the overlay is open.
+
+### 0.1.2 Fixed
+
+- Reduced image-heavy TUI redraw cost by transferring cached PNG files instead of embedding converted images in every frame.
+- Filtered ignored mouse events before Bubble Tea redraws while preserving vertical wheel scrolling.
+- Fixed the initial viewport rendering blank until the first terminal resize event.
+- Fixed completed searches remaining focused and cancelled searches leaving stale highlights or matches.
 
 ## 0.1.1 - 2026-07-03
 

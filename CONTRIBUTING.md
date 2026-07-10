@@ -20,6 +20,7 @@ go test ./...
 go vet ./...
 go build -o bin/shine ./cmd/shine
 npm run test:npm
+npm run test:publish
 ```
 
 If `npm run test:npm` fails because `bin/shine` does not exist, build the Go binary first.
@@ -34,6 +35,7 @@ go test ./...
 go vet ./...
 go build -o bin/shine ./cmd/shine
 npm run test:npm
+npm run test:publish
 bin/shine --check README.md
 ```
 
