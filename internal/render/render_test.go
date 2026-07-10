@@ -15,6 +15,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/Nithish-Yenaganti/shine/internal/config"
 	"github.com/Nithish-Yenaganti/shine/internal/parser"
@@ -42,7 +43,8 @@ func TestRenderCalloutTableAndCode(t *testing.T) {
 	if !strings.Contains(out, "┌") || !strings.Contains(out, "┼") {
 		t.Fatalf("missing table borders:\n%s", out)
 	}
-	if !strings.Contains(out, "┌ go") || !strings.Contains(out, "fmt.Println") {
+	stripped := ansi.Strip(out)
+	if !strings.Contains(stripped, "┌ go") || !strings.Contains(stripped, "fmt.Println") {
 		t.Fatalf("missing code block:\n%s", out)
 	}
 }
@@ -115,6 +117,35 @@ func TestClaudeCodeUsesThemeReadableRawLines(t *testing.T) {
 	}
 	if !strings.Contains(got, "fmt.Println") {
 		t.Fatalf("missing code content: %q", got)
+	}
+}
+
+func TestLightThemesUseLightSyntaxStyle(t *testing.T) {
+	for _, name := range []string{"github", "catppuccin-latte", "claude"} {
+		r := New(48, config.ThemeByName(name))
+		if got := r.syntaxStyleName(); got != "github" {
+			t.Fatalf("%s syntax style = %q, want github", name, got)
+		}
+	}
+}
+
+func TestDarkThemesUseDarkSyntaxStyle(t *testing.T) {
+	for _, name := range []string{"tomorrow-night", "catppuccin-mocha", "everforest", "jellybeans", "gotham"} {
+		r := New(48, config.ThemeByName(name))
+		if got := r.syntaxStyleName(); got != "github-dark" {
+			t.Fatalf("%s syntax style = %q, want github-dark", name, got)
+		}
+	}
+}
+
+func TestMonoUsesMonokaiSyntaxStyle(t *testing.T) {
+	r := New(48, config.ThemeByName("mono"))
+	if got := r.syntaxStyleName(); got != "monokai" {
+		t.Fatalf("mono syntax style = %q, want monokai", got)
+	}
+	lines := r.codeLines("go install github.com/Nithish-Yenaganti/shine/cmd/shine@latest", "sh")
+	if got := strings.Join(lines, "\n"); !strings.Contains(got, "\x1b[") {
+		t.Fatalf("mono code should use syntax highlighting, got %q", got)
 	}
 }
 

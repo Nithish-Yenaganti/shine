@@ -4,24 +4,30 @@ All notable changes to `shine` will be documented in this file.
 
 ## Unreleased
 
-### Added
+### Unreleased Added
 
 - Added optional Mermaid diagram previews through Mermaid CLI (`mmdc`) with cached image output and code fallback.
+- Added `T` as an alternate theme-picker shortcut.
+- Added explicit Bubble Tea mouse support for smoother wheel scrolling.
 
-### Changed
+### Unreleased Changed
 
-- Added a 15-column left TUI padding with the existing right-side content reserve.
+- Changed the TUI layout to use responsive page gutters based on terminal width.
+- Changed the default `mono` theme to use a black background, white document text, and highlighted dark code blocks.
+- Tuned mouse wheel scrolling to move more lines per wheel tick.
+- Updated theme display names, aliases, and README theme documentation.
+- Changed README logo references to use `fixtures/LOGO.jpeg`.
 
 ## 0.1.1 - 2026-07-03
 
-### Changed
+### 0.1.1 Changed
 
 - Added an npm-specific README publishing flow.
 - Simplified the GitHub README for a shorter project overview.
 
 ## 0.1.0 - 2026-07-01
 
-### Added
+### 0.1.0 Added
 
 - Terminal-native Markdown preview and docs quality checking for files and stdin.
 - Interactive TUI with scrolling, search, heading outline, help panel, and live reload.
@@ -36,7 +42,7 @@ All notable changes to `shine` will be documented in this file.
 - GoReleaser configuration for macOS and Linux release archives with checksums.
 - npm wrapper package that installs and runs the matching GitHub release binary.
 
-### Changed
+### 0.1.0 Changed
 
 - Changed the default theme to `mono`.
 - Resolved local image paths relative to the Markdown source file and kept non-interactive output as text placeholders.

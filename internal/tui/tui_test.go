@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/Nithish-Yenaganti/shine/internal/config"
 	"github.com/Nithish-Yenaganti/shine/internal/source"
@@ -38,8 +39,8 @@ func TestContentWidthReservesLeftAndRightPadding(t *testing.T) {
 		want  int
 	}{
 		{60, 57},
-		{88, 53},
-		{140, 105},
+		{88, 54},
+		{140, 84},
 	}
 	for _, tt := range tests {
 		m := model{width: tt.width}
@@ -49,12 +50,58 @@ func TestContentWidthReservesLeftAndRightPadding(t *testing.T) {
 	}
 }
 
-func TestPaddedBodyAddsLeftPadding(t *testing.T) {
+func TestPaddedBodyAddsLeftPaddingOnly(t *testing.T) {
 	m := model{width: 88}
 	got := m.paddedBody("one\ntwo")
-	prefix := strings.Repeat(" ", 15)
+	prefix := strings.Repeat(" ", 17)
 	if got != prefix+"one\n"+prefix+"two" {
 		t.Fatalf("unexpected padded body: %q", got)
+	}
+}
+
+func TestPaddedBodyDoesNotCenterStructuralLines(t *testing.T) {
+	m := model{width: 88}
+	input := strings.Join([]string{
+		"┌ go ───",
+		"│ fmt.Println",
+		"• item",
+		"┃ quote",
+	}, "\n")
+	got := m.paddedBody(input)
+	prefix := strings.Repeat(" ", 17)
+	want := prefix + strings.ReplaceAll(input, "\n", "\n"+prefix)
+	if got != want {
+		t.Fatalf("unexpected structural padding:\n%q\nwant:\n%q", got, want)
+	}
+}
+
+func TestReloadRenderLeavesHeadingsAndBodyLeftAligned(t *testing.T) {
+	m := model{
+		width: 88,
+		theme: config.ThemeByName("mono"),
+		source: source.Source{
+			Name:    "test.md",
+			Content: "# Shine\n\nBody text\n\n- item",
+		},
+	}
+
+	m.reloadRender()
+	stripped := ansi.Strip(m.content)
+	lines := strings.Split(stripped, "\n")
+	if len(lines) < 6 {
+		t.Fatalf("expected rendered heading, paragraph, and list, got:\n%q", stripped)
+	}
+	if lines[0] != "Shine" {
+		t.Fatalf("expected heading title to stay left aligned, got %q", lines[0])
+	}
+	if lines[1] != "━━━━━" {
+		t.Fatalf("expected heading rule to stay left aligned, got %q", lines[1])
+	}
+	if lines[3] != "Body text" {
+		t.Fatalf("expected paragraph to stay left aligned, got %q", lines[3])
+	}
+	if lines[5] != "• item" {
+		t.Fatalf("expected list item to stay left aligned, got %q", lines[5])
 	}
 }
 
@@ -77,7 +124,7 @@ func TestStatusLineUsesCachedTotalLines(t *testing.T) {
 func TestKeyboardShortcutsScrollViewport(t *testing.T) {
 	m := model{
 		theme:    config.ThemeByName("mono"),
-		viewport: viewport.New(20, 4),
+		viewport: newViewport(20, 4),
 		content:  strings.Join([]string{"one", "two", "three", "four", "five", "six", "seven", "eight"}, "\n"),
 	}
 	m.viewport.SetContent(m.content)
@@ -100,6 +147,48 @@ func TestKeyboardShortcutsScrollViewport(t *testing.T) {
 	m = updateKey(t, m, "u")
 	if m.viewport.YOffset != 0 {
 		t.Fatalf("expected u to scroll back up to 0, got %d", m.viewport.YOffset)
+	}
+}
+
+func TestThemeShortcutWorksAfterScrolling(t *testing.T) {
+	m := model{
+		theme:    config.ThemeByName("mono"),
+		viewport: newViewport(20, 4),
+		content:  strings.Join([]string{"one", "two", "three", "four", "five", "six", "seven", "eight"}, "\n"),
+	}
+	m.viewport.SetContent(m.content)
+
+	m = updateKey(t, m, "j")
+	m = updateKey(t, m, "T")
+	if !m.themeMenu {
+		t.Fatalf("expected uppercase T to open theme menu after scrolling")
+	}
+}
+
+func TestMouseWheelScrollsViewportWithTunedDelta(t *testing.T) {
+	m := model{
+		theme:    config.ThemeByName("mono"),
+		viewport: newViewport(20, 4),
+		content:  strings.Join([]string{"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"}, "\n"),
+	}
+	m.viewport.SetContent(m.content)
+
+	m = updateMouse(t, m, tea.MouseMsg{
+		Action: tea.MouseActionPress,
+		Button: tea.MouseButtonWheelDown,
+		Type:   tea.MouseWheelDown,
+	})
+	if m.viewport.YOffset < 5 {
+		t.Fatalf("expected wheel down to scroll by tuned delta, got offset %d", m.viewport.YOffset)
+	}
+
+	m = updateMouse(t, m, tea.MouseMsg{
+		Action: tea.MouseActionPress,
+		Button: tea.MouseButtonWheelUp,
+		Type:   tea.MouseWheelUp,
+	})
+	if m.viewport.YOffset != 0 {
+		t.Fatalf("expected wheel up to return to top, got offset %d", m.viewport.YOffset)
 	}
 }
 
@@ -202,8 +291,9 @@ func TestThemeMenuAppliesSelectedTheme(t *testing.T) {
 	if !m.themeMenu {
 		t.Fatalf("expected t to open theme menu")
 	}
-	if !strings.Contains(m.View(), "themes") {
-		t.Fatalf("expected theme menu view to render")
+	view := m.View()
+	if !strings.Contains(view, "themes") || !strings.Contains(view, "Tomorrow Night") || !strings.Contains(view, "GitHub Light") {
+		t.Fatalf("expected theme menu view to render display names, got:\n%s", view)
 	}
 
 	m = updateKey(t, m, "j")
@@ -214,6 +304,9 @@ func TestThemeMenuAppliesSelectedTheme(t *testing.T) {
 	if m.theme.Name != "github" {
 		t.Fatalf("expected selected theme github, got %q", m.theme.Name)
 	}
+	if !strings.Contains(m.statusLine(), "theme:GitHub Light") {
+		t.Fatalf("expected status line to show display name, got %q", m.statusLine())
+	}
 }
 
 func updateKey(t *testing.T, m model, key string) model {
@@ -222,6 +315,16 @@ func updateKey(t *testing.T, m model, key string) model {
 }
 
 func updateKeyMsg(t *testing.T, m model, msg tea.KeyMsg) model {
+	t.Helper()
+	updated, _ := m.Update(msg)
+	got, ok := updated.(model)
+	if !ok {
+		t.Fatalf("expected model update, got %T", updated)
+	}
+	return got
+}
+
+func updateMouse(t *testing.T, m model, msg tea.MouseMsg) model {
 	t.Helper()
 	updated, _ := m.Update(msg)
 	got, ok := updated.(model)

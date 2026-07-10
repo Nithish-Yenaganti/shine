@@ -1,4 +1,4 @@
-![Shine logo](fixtures/LOGO.png)
+![Shine logo](fixtures/LOGO.jpeg)
 
 # shine
 
@@ -11,7 +11,7 @@ Current version: `0.1.1`.
 ## Features
 
 - Markdown files, stdin, and non-interactive output
-- TUI preview with scrolling, search, outline, help, themes, and left/right padding
+- TUI preview with keyboard and mouse scrolling, search, outline, help, themes, and responsive page gutters
 - Tables, callouts, task lists, code blocks, links, and inline styles
 - Local image previews in Kitty/Ghostty-compatible terminals
 - Optional Mermaid previews through Mermaid CLI (`mmdc`)
@@ -38,18 +38,31 @@ bin/shine version
 ## Usage
 
 ```sh
+# Open README.md in the interactive preview
 shine README.md
+
+# Preview README.md and reload when it changes
 shine --watch README.md
+
+# Preview Markdown from stdin
 cat README.md | shine
+
+# Print the styled Markdown output once
 shine --print README.md
+
+# Print plain text output without styling
 shine --plain README.md
+
+# Show the document heading outline
 shine --outline README.md
+
+# Check README.md for common docs issues
 shine --check README.md
 ```
 
 ## Image Previews
 
-Local images render inline in the interactive TUI on Kitty-compatible terminals, currently Kitty and Ghostty. Image paths resolve relative to the Markdown file, so `![Logo](fixtures/LOGO.png)` works from `README.md`.
+Local images render inline in the interactive TUI on Kitty-compatible terminals, currently Kitty and Ghostty. Image paths resolve relative to the Markdown file, so `![Logo](fixtures/LOGO.jpeg)` works from `README.md`.
 
 Unsupported terminals, including Apple's default macOS Terminal.app, show a text placeholder instead. `--print`, `--plain`, remote images, and missing files also use placeholders.
 
@@ -95,6 +108,7 @@ shine completions zsh > _shine
 q          quit
 j/down     scroll down
 k/up       scroll up
+mouse      scroll
 d/space    half-page down
 u          half-page up
 g          top
@@ -104,26 +118,26 @@ n          next search result
 N          previous search result
 o          heading outline
 r          reload file
-t          theme picker
+t/T        theme picker
 h/H/F1     show help panel
 ?          toggle help panel
 ```
 
 ## Themes
 
-`mono` is the default. Press `t` in the TUI to switch themes.
+`mono` is the default black-background theme. Press `t` or `T` in the TUI to switch themes.
 
-- `tomorrow-night`
-- `github`
-- `mono`
-- `catppuccin-latte`
-- `catppuccin-mocha`
-- `claude`
-- `everforest`
-- `jellybeans`
-- `gotham`
+- Tomorrow Night: `tomorrow-night`
+- GitHub Light: `github`
+- Mono: `mono`
+- Catppuccin Latte: `catppuccin-latte`
+- Catppuccin Mocha: `catppuccin-mocha`
+- Claude: `claude`
+- Everforest Dark: `everforest`
+- Jellybeans: `jellybeans`
+- Gotham: `gotham`
 
-Aliases: `cappuccino`, `daylight`, `midnight`, `mocha`.
+Aliases: `daylight`, `latte`, `cappuccino`, `mocha`, `midnight`.
 
 ## Release
 

@@ -67,7 +67,11 @@ func Run(opts Options) error {
 	input.Prompt = "/"
 	input.CharLimit = 128
 
-	content := render.New(88, opts.Theme).
+	initialWidth := 88
+	initialHeight := 24
+	initial := model{width: initialWidth}
+	contentWidth := initial.contentWidth()
+	content := render.New(contentWidth, opts.Theme).
 		WithSourcePath(opts.Source.Path).
 		WithImages(true).
 		Render(doc)
@@ -75,11 +79,13 @@ func Run(opts Options) error {
 		source:     opts.Source,
 		theme:      opts.Theme,
 		watch:      opts.Watch,
-		viewport:   viewport.New(88, 24),
+		viewport:   newViewport(contentWidth, initialHeight),
 		search:     input,
 		help:       opts.ShowKeys,
 		themeIndex: themeIndex(opts.Theme.Name),
 		debugKeys:  opts.DebugKeys,
+		width:      initialWidth,
+		height:     initialHeight,
 		content:    content,
 		totalLines: lineCount(content),
 		status:     "shine",
@@ -88,6 +94,7 @@ func Run(opts Options) error {
 	programOptions := []tea.ProgramOption{
 		tea.WithInput(os.Stdin),
 		tea.WithOutput(os.Stdout),
+		tea.WithMouseCellMotion(),
 	}
 	if opts.UseAltScreen {
 		programOptions = append(programOptions, tea.WithAltScreen())
@@ -170,7 +177,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "r":
 			m.reloadFile()
 			return m, nil
-		case "t":
+		case "t", "T":
 			m.themeIndex = themeIndex(m.theme.Name)
 			m.themeMenu = true
 			return m, nil
@@ -219,7 +226,7 @@ func (m model) View() string {
 func (m model) updateThemeMenu(msg tea.KeyMsg) (model, tea.Cmd) {
 	names := config.ThemeNames()
 	switch msg.String() {
-	case "esc", "q", "t":
+	case "esc", "q", "t", "T":
 		m.themeMenu = false
 	case "up", "k":
 		m.themeIndex--
@@ -237,6 +244,12 @@ func (m model) updateThemeMenu(msg tea.KeyMsg) (model, tea.Cmd) {
 		return m, tea.Sequence(terminalBackgroundCmd(m.theme.Background), tea.ClearScreen)
 	}
 	return m, nil
+}
+
+func newViewport(width int, height int) viewport.Model {
+	vp := viewport.New(width, height)
+	vp.MouseWheelDelta = 6
+	return vp
 }
 
 func (m *model) reloadFile() {
@@ -342,6 +355,11 @@ func (m model) themeMenuView() string {
 	lines = append(lines, "")
 	for i, name := range names {
 		marker := " "
+		theme := config.ThemeByName(name)
+		label := theme.DisplayName
+		if label == "" {
+			label = theme.Name
+		}
 		rowStyle := m.style().Foreground(lipgloss.Color(m.theme.Body))
 		if i == m.themeIndex {
 			marker = "›"
@@ -354,7 +372,7 @@ func (m model) themeMenuView() string {
 		if name == m.theme.Name {
 			current = " current"
 		}
-		lines = append(lines, rowStyle.Render(fmt.Sprintf("%s %s%s", marker, name, current)))
+		lines = append(lines, rowStyle.Render(fmt.Sprintf("%s %s%s", marker, label, current)))
 	}
 	lines = append(lines, "")
 	lines = append(lines, m.style().Foreground(lipgloss.Color(m.theme.Muted)).Render("enter apply   esc close"))
@@ -392,8 +410,15 @@ func (m model) statusLine() string {
 		keyDebug = " | key:" + m.lastKey
 	}
 	return m.style().Foreground(lipgloss.Color(m.theme.Muted)).Render(
-		fmt.Sprintf("%s | theme:%s | %s | line:%d/%d | %s | t themes | h keys%s", m.source.Name, m.theme.Name, watch, currentLine, totalLines, search, keyDebug),
+		fmt.Sprintf("%s | theme:%s | %s | line:%d/%d | %s | t themes | h keys%s", m.source.Name, themeLabel(m.theme), watch, currentLine, totalLines, search, keyDebug),
 	)
+}
+
+func themeLabel(theme config.Theme) string {
+	if theme.DisplayName != "" {
+		return theme.DisplayName
+	}
+	return theme.Name
 }
 
 func keyLabel(msg tea.KeyMsg) string {
@@ -477,14 +502,14 @@ func (m model) rightPadding() int {
 	if m.terminalWidth() < 72 {
 		return 2
 	}
-	return 20
+	return m.terminalWidth() / 5
 }
 
 func (m model) leftPadding() int {
 	if m.terminalWidth() < 72 {
 		return 1
 	}
-	return 15
+	return m.terminalWidth() / 5
 }
 
 func (m model) paddedBody(body string) string {

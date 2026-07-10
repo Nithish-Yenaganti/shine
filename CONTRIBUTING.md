@@ -5,6 +5,7 @@ Thanks for helping improve `shine`. This project is a terminal Markdown previewe
 ## Good First Contributions
 
 - Improve Markdown rendering for a common syntax case.
+- Add or refine themes; new theme contributions are welcome.
 - Add or refine `--check` warnings for README, changelog, and release-note workflows.
 - Improve tests around parser, renderer, CLI, or TUI behavior.
 - Clarify README examples or release documentation.
@@ -41,6 +42,7 @@ bin/shine --check README.md
 - Keep changes focused. Prefer small PRs over broad rewrites.
 - Add tests for behavior changes.
 - Update README or CHANGELOG when user-facing behavior changes.
+- For theme changes, include the display name, aliases if needed, docs updates, and palette tests.
 - Avoid unrelated formatting or dependency churn.
 - Explain why the change matters for terminal Markdown review.
 

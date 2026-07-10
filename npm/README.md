@@ -3,7 +3,10 @@
 Terminal Markdown preview and docs checks from your shell.
 
 ```sh
+# Install the CLI globally from npm
 npm install -g @nk02/shine
+
+# Open README.md in the interactive preview
 shine README.md
 ```
 
@@ -12,7 +15,7 @@ shine README.md
 - renders Markdown in an interactive terminal preview
 - checks README, changelog, and release-note files before publishing
 - supports `--print`, `--plain`, `--outline`, and `--check`
-- includes themes, search, scrolling, outline view, and live reload
+- includes themes, responsive page gutters, keyboard and mouse scrolling, outline view, and live reload
 - optionally renders Mermaid diagrams when Mermaid CLI (`mmdc`) is installed
 
 ## Image Support
@@ -26,10 +29,19 @@ Mermaid diagrams use the same image path. If `mmdc` is unavailable, Mermaid bloc
 ## Commands
 
 ```sh
+# Open README.md in the interactive preview
 shine README.md
+
+# Preview README.md and reload when it changes
 shine --watch README.md
+
+# Check README.md for common docs issues
 shine --check README.md
+
+# Print styled Markdown once
 shine --print README.md
+
+# Show the document heading outline
 shine --outline README.md
 ```
 

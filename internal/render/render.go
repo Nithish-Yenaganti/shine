@@ -112,13 +112,16 @@ func (r Renderer) renderBlock(block model.Block) string {
 func (r Renderer) heading(level int, text string) string {
 	switch level {
 	case 1:
+		rule := strings.Repeat("━", clamp(lipgloss.Width(text), 3, r.Width/2))
 		title := r.headingStyle().Bold(true).Render(text)
-		return title + "\n" + r.borderStyle().Render(strings.Repeat("━", clamp(lipgloss.Width(text), 3, r.Width/2)))
+		return title + "\n" + r.borderStyle().Render(rule)
 	case 2:
+		rule := strings.Repeat("─", clamp(lipgloss.Width(text), 3, r.Width/2))
 		title := r.headingStyle().Render(text)
-		return title + "\n" + r.borderStyle().Render(strings.Repeat("─", clamp(lipgloss.Width(text), 3, r.Width/2)))
+		return title + "\n" + r.borderStyle().Render(rule)
 	default:
-		return r.mutedStyle().Render(strings.Repeat("·", max(0, level-2))+" ") + r.headingStyle().Render(text)
+		prefix := strings.Repeat("·", max(0, level-2)) + " "
+		return r.mutedStyle().Render(prefix) + r.headingStyle().Render(text)
 	}
 }
 
@@ -429,7 +432,7 @@ func (r Renderer) showCodeLineNumbers(language string) bool {
 
 func (r Renderer) codeLines(code string, language string) []string {
 	raw := splitCode(code)
-	if r.Theme.Name == "mono" || r.Theme.Name == "github" || r.Theme.Name == "claude" {
+	if r.Theme.Name == "github" || r.Theme.Name == "claude" {
 		return raw
 	}
 	lexer := lexers.Get(language)
@@ -443,11 +446,7 @@ func (r Renderer) codeLines(code string, language string) []string {
 	if formatter == nil {
 		return raw
 	}
-	styleName := "github-dark"
-	if r.Theme.Name == "github" {
-		styleName = "github"
-	}
-	style := styles.Get(styleName)
+	style := styles.Get(r.syntaxStyleName())
 	if style == nil {
 		return raw
 	}
@@ -460,6 +459,17 @@ func (r Renderer) codeLines(code string, language string) []string {
 		return raw
 	}
 	return splitCode(strings.TrimRight(out.String(), "\n"))
+}
+
+func (r Renderer) syntaxStyleName() string {
+	switch r.Theme.Name {
+	case "github", "catppuccin-latte", "claude":
+		return "github"
+	case "mono":
+		return "monokai"
+	default:
+		return "github-dark"
+	}
 }
 
 func (r Renderer) image(block model.Block) string {

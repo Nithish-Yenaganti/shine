@@ -11,6 +11,9 @@ func TestThemeNamesResolve(t *testing.T) {
 		if theme.Body == "" || theme.Heading == "" || theme.Border == "" {
 			t.Fatalf("theme %q is missing required colors: %+v", name, theme)
 		}
+		if theme.DisplayName == "" {
+			t.Fatalf("theme %q is missing a display name", name)
+		}
 	}
 }
 
@@ -18,6 +21,7 @@ func TestThemeAliasesResolveToRealThemeNames(t *testing.T) {
 	tests := map[string]string{
 		"cappuccino": "catppuccin-latte",
 		"daylight":   "github",
+		"latte":      "catppuccin-latte",
 		"midnight":   "tomorrow-night",
 		"mocha":      "catppuccin-mocha",
 	}
@@ -25,6 +29,19 @@ func TestThemeAliasesResolveToRealThemeNames(t *testing.T) {
 		if got := ThemeByName(alias).Name; got != want {
 			t.Fatalf("expected alias %q to resolve to %q, got %q", alias, want, got)
 		}
+	}
+}
+
+func TestGitHubLightUsesPrimerPalette(t *testing.T) {
+	theme := ThemeByName("github")
+	if theme.DisplayName != "GitHub Light" {
+		t.Fatalf("expected GitHub display name, got %q", theme.DisplayName)
+	}
+	if theme.Background != "#ffffff" || theme.Body != "#1f2328" || theme.Heading != "#1f2328" {
+		t.Fatalf("unexpected GitHub base colors: background=%q body=%q heading=%q", theme.Background, theme.Body, theme.Heading)
+	}
+	if theme.Muted != "#656d76" || theme.Border != "#d0d7de" || theme.Link != "#0969da" {
+		t.Fatalf("unexpected GitHub support colors: muted=%q border=%q link=%q", theme.Muted, theme.Border, theme.Link)
 	}
 }
 
@@ -51,6 +68,32 @@ func TestClaudeThemeUsesAnthropicInspiredPalette(t *testing.T) {
 	}
 	if theme.Heading != "#b85c38" || theme.Link != "#b85c38" || theme.CalloutNote != "#b85c38" {
 		t.Fatalf("expected Claude accent colors to use Anthropic-like clay, got heading=%q link=%q note=%q", theme.Heading, theme.Link, theme.CalloutNote)
+	}
+}
+
+func TestMonoThemeUsesBlackAndWhitePalette(t *testing.T) {
+	theme := ThemeByName("mono")
+	if theme.Background != "#111111" || theme.Body != "#f5f5f5" || theme.Heading != "#f5f5f5" {
+		t.Fatalf("unexpected mono base colors: background=%q body=%q heading=%q", theme.Background, theme.Body, theme.Heading)
+	}
+	if theme.CodeBackground != "#2b2b2b" || theme.Code != "#f5f5f5" || theme.InlineCode != "#f5f5f5" {
+		t.Fatalf("unexpected mono code colors: background=%q code=%q inline=%q", theme.CodeBackground, theme.Code, theme.InlineCode)
+	}
+	if theme.CodeLineNumbers {
+		t.Fatalf("mono should keep code line numbers disabled")
+	}
+}
+
+func TestCatppuccinLatteUsesOfficialPaletteNamesAndColors(t *testing.T) {
+	theme := ThemeByName("latte")
+	if theme.Name != "catppuccin-latte" || theme.DisplayName != "Catppuccin Latte" {
+		t.Fatalf("latte alias resolved to name=%q display=%q", theme.Name, theme.DisplayName)
+	}
+	if theme.Background != "#eff1f5" || theme.Body != "#4c4f69" || theme.Heading != "#8839ef" {
+		t.Fatalf("unexpected Catppuccin Latte base colors: background=%q body=%q heading=%q", theme.Background, theme.Body, theme.Heading)
+	}
+	if theme.Border != "#acb0be" || theme.MatchHighlight != "#bcc0cc" {
+		t.Fatalf("unexpected Catppuccin Latte surface colors: border=%q match=%q", theme.Border, theme.MatchHighlight)
 	}
 }
 

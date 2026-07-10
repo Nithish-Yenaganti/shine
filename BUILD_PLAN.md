@@ -31,12 +31,13 @@ fsnotify        live reload
 - Binary name: `shine`.
 - Product name: `shine`.
 - Parse Markdown into an owned block model, not a Glamour/Glow wrapper.
-- Support headings, paragraphs, bold, italic, inline code, links, quotes, callouts, task lists, tables, code blocks, dividers, local image previews in Kitty/Ghostty-compatible TUIs, and text image placeholders elsewhere.
-- Keep CLI behavior: file input, stdin input, `--print`, `--check`, `--watch`, themes, and shell completions.
+- Support headings, paragraphs, bold, italic, inline code, links, quotes, callouts, task lists, tables, code blocks, dividers, optional Mermaid previews, local image previews in Kitty/Ghostty-compatible TUIs, and text image placeholders elsewhere.
+- Keep CLI behavior: file input, stdin input, `--print`, `--plain`, `--outline`, `--check`, `--watch`, themes, and shell completions.
 - Make `--check` useful for README, changelog, and release-note review by catching publishing mistakes before docs land.
 - Use Bubble Tea for interactive TUI behavior.
 - Use Lip Gloss for visual presentation.
-- Keep the interactive TUI readable with left/right terminal padding while leaving non-interactive output unpadded.
+- Keep the interactive TUI readable with responsive page gutters while leaving non-interactive output unpadded.
+- Support keyboard and mouse scrolling in the interactive TUI.
 - Use Bubbles where useful for viewport and search input.
 - Verify locally against `README.md` and `fixtures/basic.md`.
 

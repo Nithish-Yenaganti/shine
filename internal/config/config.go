@@ -2,6 +2,7 @@ package config
 
 type Theme struct {
 	Name            string
+	DisplayName     string
 	Background      string
 	Heading         string
 	Body            string
@@ -30,17 +31,18 @@ func ThemeByName(name string) Theme {
 	case "github", "daylight":
 		return Theme{
 			Name:            "github",
+			DisplayName:     "GitHub Light",
 			Background:      "#ffffff",
-			Heading:         "#0f4c81",
-			Body:            "#24292f",
-			Muted:           "#57606a",
-			Border:          "#8c959f",
-			Code:            "#24292f",
+			Heading:         "#1f2328",
+			Body:            "#1f2328",
+			Muted:           "#656d76",
+			Border:          "#d0d7de",
+			Code:            "#1f2328",
 			CodeBackground:  "#f6f8fa",
 			InlineCode:      "#8250df",
 			Link:            "#0969da",
-			TableHeader:     "#24292f",
-			Quote:           "#6e7781",
+			TableHeader:     "#1f2328",
+			Quote:           "#656d76",
 			CalloutNote:     "#0969da",
 			CalloutTip:      "#1a7f37",
 			CalloutWarning:  "#9a6700",
@@ -48,14 +50,15 @@ func ThemeByName(name string) Theme {
 			BlockGap:        1,
 			CodeLineNumbers: true,
 		}
-	case "catppuccin-latte", "cappuccino":
+	case "catppuccin-latte", "latte", "cappuccino":
 		return Theme{
 			Name:            "catppuccin-latte",
+			DisplayName:     "Catppuccin Latte",
 			Background:      "#eff1f5",
 			Heading:         "#8839ef",
 			Body:            "#4c4f69",
 			Muted:           "#6c6f85",
-			Border:          "#9ca0b0",
+			Border:          "#acb0be",
 			Code:            "#40a02b",
 			CodeBackground:  "#e6e9ef",
 			InlineCode:      "#fe640b",
@@ -65,13 +68,14 @@ func ThemeByName(name string) Theme {
 			CalloutNote:     "#1e66f5",
 			CalloutTip:      "#40a02b",
 			CalloutWarning:  "#df8e1d",
-			MatchHighlight:  "#ccd0da",
+			MatchHighlight:  "#bcc0cc",
 			BlockGap:        1,
 			CodeLineNumbers: true,
 		}
 	case "catppuccin-mocha", "mocha":
 		return Theme{
 			Name:            "catppuccin-mocha",
+			DisplayName:     "Catppuccin Mocha",
 			Background:      "#1e1e2e",
 			Heading:         "#cba6f7",
 			Body:            "#cdd6f4",
@@ -93,6 +97,7 @@ func ThemeByName(name string) Theme {
 	case "claude":
 		return Theme{
 			Name:            "claude",
+			DisplayName:     "Claude",
 			Background:      "#faf9f5",
 			Heading:         "#b85c38",
 			Body:            "#191919",
@@ -114,6 +119,7 @@ func ThemeByName(name string) Theme {
 	case "everforest":
 		return Theme{
 			Name:            "everforest",
+			DisplayName:     "Everforest Dark",
 			Background:      "#2d353b",
 			Heading:         "#7fbbb3",
 			Body:            "#d3c6aa",
@@ -135,6 +141,7 @@ func ThemeByName(name string) Theme {
 	case "jellybeans":
 		return Theme{
 			Name:            "jellybeans",
+			DisplayName:     "Jellybeans",
 			Background:      "#151515",
 			Heading:         "#8197bf",
 			Body:            "#e8e8d3",
@@ -156,6 +163,7 @@ func ThemeByName(name string) Theme {
 	case "gotham":
 		return Theme{
 			Name:            "gotham",
+			DisplayName:     "Gotham",
 			Background:      "#0c1014",
 			Heading:         "#599cab",
 			Body:            "#99d1ce",
@@ -177,25 +185,28 @@ func ThemeByName(name string) Theme {
 	case "mono":
 		t := ThemeByName("tomorrow-night")
 		t.Name = "mono"
-		t.Background = ""
-		t.Heading = "15"
-		t.Body = "15"
-		t.Muted = "8"
-		t.Border = "8"
-		t.Code = "15"
-		t.CodeBackground = "0"
-		t.InlineCode = "15"
-		t.Link = "14"
-		t.TableHeader = "15"
-		t.Quote = "8"
-		t.CalloutNote = "15"
-		t.CalloutTip = "15"
-		t.CalloutWarning = "15"
+		t.DisplayName = "Mono"
+		t.Background = "#111111"
+		t.Heading = "#f5f5f5"
+		t.Body = "#f5f5f5"
+		t.Muted = "#a3a3a3"
+		t.Border = "#333333"
+		t.Code = "#f5f5f5"
+		t.CodeBackground = "#2b2b2b"
+		t.InlineCode = "#f5f5f5"
+		t.Link = "#c084fc"
+		t.TableHeader = "#f5f5f5"
+		t.Quote = "#a3a3a3"
+		t.CalloutNote = "#f5f5f5"
+		t.CalloutTip = "#f5f5f5"
+		t.CalloutWarning = "#f5f5f5"
+		t.MatchHighlight = "#4a4a4a"
 		t.CodeLineNumbers = false
 		return t
 	case "tomorrow-night", "midnight":
 		return Theme{
 			Name:            "tomorrow-night",
+			DisplayName:     "Tomorrow Night",
 			Background:      "#1d1f21",
 			Heading:         "#81a2be",
 			Body:            "#c5c8c6",
