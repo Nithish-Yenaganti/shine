@@ -2,6 +2,8 @@
 
 Terminal Markdown preview and docs checks from your shell.
 
+Current version: `0.1.1`.
+
 ```sh
 # Install the CLI globally from npm
 npm install -g @nk02/shine
@@ -28,7 +30,7 @@ Mermaid diagrams use the same image path. If `mmdc` is unavailable, Mermaid bloc
 
 ## Terminal Controls
 
-Use `j/k`, arrow keys, page keys, `g/G`, or the mouse wheel to scroll. Press `t` or `T` to open the theme picker.
+Use `j/k`, arrow keys, page keys, `g/G`, or the mouse wheel to scroll. Use `/` to search, `o` for the heading outline, and `t` or `T` for the theme picker.
 
 Mouse motion and clicks that are not wheel events are ignored. Help, outline, search, and theme overlays block document scrolling behind them.
 
