@@ -1,4 +1,6 @@
- ![Shine logo](fixtures/demo/LOGO.jpeg)
+[![Shine logo](fixtures/demo/LOGO.jpeg)](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB)
+
+*Click the logo to watch the demo video.*
 
 # shine
 
@@ -7,10 +9,6 @@
 Preview Markdown without leaving the terminal, then run quick checks for common publishing issues before your docs land.
 
 Current version: `0.1.2`.
-
-## Demo
-
-![Demo video](fixtures/demo/demo.mp4)
 
 ## Features
 
