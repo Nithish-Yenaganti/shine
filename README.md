@@ -10,7 +10,7 @@ Current version: `0.1.2`.
 
 ## Demo
 
-![Demo video](fictures/demo/demo.mov)
+![Demo video](fixtures/demo/demo.mp4)
 
 ## Features
 
