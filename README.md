@@ -1,4 +1,4 @@
-![Shine logo](fixtures/LOGO.jpeg)
+ ![Shine logo](fixtures/demo/LOGO.jpeg)
 
 # shine
 
@@ -7,6 +7,10 @@
 Preview Markdown without leaving the terminal, then run quick checks for common publishing issues before your docs land.
 
 Current version: `0.1.2`.
+
+## Demo
+
+![Demo video](fictures/demo/demo.mov)
 
 ## Features
 
