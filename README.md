@@ -1,6 +1,6 @@
-[![Shine logo](fixtures/demo/LOGO.jpeg)](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB)
+[![Shine TUI demo showing Markdown preview, theme switching, and scrolling](fixtures/demo/demo.gif)](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB)
 
-*Click the logo to watch the demo video.*
+[Watch the full demo on YouTube](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB).
 
 # shine
 
