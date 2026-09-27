@@ -1,14 +1,14 @@
-[![Shine TUI demo showing Markdown preview, theme switching, and scrolling](fixtures/demo/demo.gif)](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB)
-
-[Watch the full demo on YouTube](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB).
-
 # shine
 
 `shine` is a terminal Markdown previewer and docs checker for README, changelog, and release-note workflows.
 
 Preview Markdown without leaving the terminal, then run quick checks for common publishing issues before your docs land.
 
-Current version: `0.1.2`.
+Current release: [v0.1.2](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.2). Prebuilt release binaries support macOS and Linux on x86-64 and ARM64.
+
+[![Shine TUI demo showing Markdown preview, theme switching, and scrolling](fixtures/demo/demo.gif)](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB)
+
+[Watch the full demo on YouTube](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB).
 
 ## Features
 
@@ -23,18 +23,45 @@ Current version: `0.1.2`.
 
 ## Install
 
+Choose one installation method.
+
+With npm (Node.js 18+, macOS or Linux on x64/ARM64):
+
 ```sh
-go install github.com/Nithish-Yenaganti/shine/cmd/shine@latest
-npm install -g @nk02/shine
+npm install -g @nk02/shine@0.1.2
+shine version
+shine README.md
 ```
 
-Build from source:
+The npm installer downloads the matching binary from the GitHub release. Run the preview command in a folder containing a `README.md`, or supply a different Markdown file path.
+
+With Go 1.24.2 or newer:
+
+```sh
+go install github.com/Nithish-Yenaganti/shine/cmd/shine@v0.1.2
+shine version
+```
+
+Ensure Go's binary directory is on your `PATH`. You can also download a matching archive and checksum file from the [v0.1.2 release](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.2).
+
+For a quick check without opening the interactive terminal UI:
+
+```sh
+shine --plain README.md
+shine --outline README.md
+shine --check README.md
+```
+
+Expect the document text, its heading outline, and a docs-check result respectively. Docs warnings describe the input document; they do not necessarily indicate an installation failure.
+
+Build the current source checkout:
 
 ```sh
 git clone https://github.com/Nithish-Yenaganti/shine.git
 cd shine
 go build -o bin/shine ./cmd/shine
 bin/shine version
+bin/shine --plain README.md
 ```
 
 ## Usage
@@ -154,7 +181,7 @@ goreleaser check
 goreleaser release --snapshot --clean
 ```
 
-Publish:
+For maintainers preparing a **new** release, update the version in the source and package metadata first. The commands below illustrate the existing v0.1.2 release; do not recreate or overwrite an already-published tag. Substitute the new version when publishing:
 
 ```sh
 git tag v0.1.2
@@ -163,7 +190,7 @@ git push origin v0.1.2
 npm run publish:npm -- --access public
 ```
 
-The npm publish command checks that `0.1.2` is still available and that the published GitHub release contains every required asset.
+The npm publish command checks that the version in `package.json` is not already published and that its GitHub release contains every required asset. Version `0.1.2` is already released.
 
 Checklist:
 
