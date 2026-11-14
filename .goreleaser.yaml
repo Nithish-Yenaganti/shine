@@ -36,6 +36,10 @@ archives:
       - README.md
       - LICENSE
       - CHANGELOG.md
+      - CODE_OF_CONDUCT.md
+      - CONTRIBUTING.md
+      - SECURITY.md
+      - SUPPORT.md
       - fixtures/demo/demo.gif
       - fixtures/demo/LOGO.jpeg
 

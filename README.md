@@ -4,7 +4,7 @@
 
 Preview Markdown without leaving the terminal, then run quick checks for common publishing issues before your docs land.
 
-Current release: [v0.1.3](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.3). Prebuilt release binaries support macOS and Linux on x86-64 and ARM64.
+Current release: [v0.1.4](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.4). Prebuilt release binaries support macOS and Linux on x86-64 and ARM64.
 
 [![Shine TUI demo showing Markdown preview, theme switching, and scrolling](fixtures/demo/demo.gif)](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB)
 
@@ -38,11 +38,11 @@ The npm installer downloads the matching binary from the GitHub release. Run the
 With Go 1.24.2 or newer:
 
 ```sh
-go install github.com/Nithish-Yenaganti/shine/cmd/shine@v0.1.3
+go install github.com/Nithish-Yenaganti/shine/cmd/shine@v0.1.4
 shine version
 ```
 
-Ensure Go's binary directory is on your `PATH`. You can also download a matching archive and checksum file from the [v0.1.3 release](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.3).
+Ensure Go's binary directory is on your `PATH`. You can also download a matching archive and checksum file from the [v0.1.4 release](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.4).
 
 For a quick check without opening the interactive terminal UI:
 

@@ -2,7 +2,7 @@
 
 Terminal Markdown preview and docs checks from your shell.
 
-Current version: `0.1.3`.
+Current version: `0.1.4`.
 
 ```sh
 # Install the CLI globally from npm

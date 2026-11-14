@@ -4,6 +4,10 @@ All notable changes to `shine` will be documented in this file.
 
 ## Unreleased
 
+## 0.1.4 - 2026-11-13
+
+- Included the contribution, support, security, and code of conduct documents linked from the README in GitHub release archives.
+
 ## 0.1.3 - 2026-11-13
 
 - Added a terminal demo and clearer installation and first-run instructions to the README.
