@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/Nithish-Yenaganti/shine/internal/version"
 )
 
 func TestRootCommandExposesExpectedFlagsAndCompletions(t *testing.T) {
@@ -40,7 +42,7 @@ func TestVersionCommand(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if got := strings.TrimSpace(out.String()); got != "0.1.2" {
-		t.Fatalf("version output = %q", got)
+	if got, want := strings.TrimSpace(out.String()), version.String(); got != want {
+		t.Fatalf("version output = %q, want %q", got, want)
 	}
 }

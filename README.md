@@ -4,7 +4,7 @@
 
 Preview Markdown without leaving the terminal, then run quick checks for common publishing issues before your docs land.
 
-Current release: [v0.1.2](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.2). Prebuilt release binaries support macOS and Linux on x86-64 and ARM64.
+Current release: [v0.1.3](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.3). Prebuilt release binaries support macOS and Linux on x86-64 and ARM64.
 
 [![Shine TUI demo showing Markdown preview, theme switching, and scrolling](fixtures/demo/demo.gif)](https://youtu.be/0RvUFqgH8io?si=4FxvQ7o0P_xjlJrB)
 
@@ -38,11 +38,11 @@ The npm installer downloads the matching binary from the GitHub release. Run the
 With Go 1.24.2 or newer:
 
 ```sh
-go install github.com/Nithish-Yenaganti/shine/cmd/shine@v0.1.2
+go install github.com/Nithish-Yenaganti/shine/cmd/shine@v0.1.3
 shine version
 ```
 
-Ensure Go's binary directory is on your `PATH`. You can also download a matching archive and checksum file from the [v0.1.2 release](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.2).
+Ensure Go's binary directory is on your `PATH`. You can also download a matching archive and checksum file from the [v0.1.3 release](https://github.com/Nithish-Yenaganti/shine/releases/tag/v0.1.3).
 
 For a quick check without opening the interactive terminal UI:
 
@@ -91,7 +91,7 @@ shine --check README.md
 
 ## Image Previews
 
-Local images render inline in the interactive TUI on Kitty-compatible terminals, currently Kitty and Ghostty. Image paths resolve relative to the Markdown file, so `![Logo](fixtures/LOGO.jpeg)` works from `README.md`.
+Local images render inline in the interactive TUI on Kitty-compatible terminals, currently Kitty and Ghostty. Image paths resolve relative to the Markdown file, so `![Logo](fixtures/demo/LOGO.jpeg)` works from `README.md`.
 
 JPEG and GIF previews are cached as local PNG files to keep image-heavy scrolling and theme changes responsive.
 
@@ -181,16 +181,16 @@ goreleaser check
 goreleaser release --snapshot --clean
 ```
 
-For maintainers preparing a **new** release, update the version in the source and package metadata first. The commands below illustrate the existing v0.1.2 release; do not recreate or overwrite an already-published tag. Substitute the new version when publishing:
+For maintainers preparing a **new** release, update the version in the source and package metadata first. Set `VERSION` to the new version without the `v` prefix, then run:
 
 ```sh
-git tag v0.1.2
-git push origin v0.1.2
+git tag "v${VERSION}"
+git push origin "v${VERSION}"
 # Wait for the GitHub release workflow and all release assets
 npm run publish:npm -- --access public
 ```
 
-The npm publish command checks that the version in `package.json` is not already published and that its GitHub release contains every required asset. Version `0.1.2` is already released.
+The npm publish command checks that the version in `package.json` is available on npm and that its GitHub release contains every required asset.
 
 Checklist:
 

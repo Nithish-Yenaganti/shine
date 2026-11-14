@@ -4,6 +4,12 @@ All notable changes to `shine` will be documented in this file.
 
 ## Unreleased
 
+## 0.1.3 - 2026-11-13
+
+- Added a terminal demo and clearer installation and first-run instructions to the README.
+- Fixed the README logo example and included its images in GitHub release archives.
+- Updated Goldmark from 1.8.2 to 1.8.6.
+
 ## 0.1.2 - 2026-07-10
 
 ### 0.1.2 Added

@@ -36,6 +36,8 @@ archives:
       - README.md
       - LICENSE
       - CHANGELOG.md
+      - fixtures/demo/demo.gif
+      - fixtures/demo/LOGO.jpeg
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
